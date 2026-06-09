@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" width="320" height="400">
+  <defs>
+    <style>
+      .navy { fill: #1A3175; }
+    </style>
+  </defs>
+
+  <!-- ── J 오른쪽 세로 막대 ── -->
+  <rect class="navy" x="218" y="0" width="68" height="310" rx="4"/>
+  <!-- J 곡선 (바닥 둥근 부분) -->
+  <path class="navy" d="M 286 280 Q 286 370 210 380 Q 140 390 110 345 Q 90 315 100 285 L 140 285 Q 134 310 155 330 Q 185 355 220 338 Q 250 320 250 285 L 286 280 Z"/>
+
+  <!-- ── 불꽃/파도 4줄 (왼쪽) ── -->
+  <!-- 맨 안쪽 (가장 오른쪽) flame -->
+  <path class="navy" d="M 185 290 Q 195 230 180 175 Q 168 130 178 70 Q 182 35 195 10 Q 200 0 205 5 Q 195 35 200 80 Q 208 140 196 195 Q 186 245 200 295 Z" />
+  <!-- 두번째 flame -->
+  <path class="navy" d="M 155 285 Q 165 220 148 162 Q 134 112 146 52 Q 150 18 163 -2 Q 168 -10 172 -2 Q 162 28 168 75 Q 176 138 162 192 Q 150 244 164 288 Z" />
+  <!-- 세번째 flame -->
+  <path class="navy" d="M 124 278 Q 134 210 116 150 Q 101 98 114 38 Q 118 5 132 -16 Q 137 -24 141 -16 Q 130 16 136 65 Q 144 128 129 182 Q 116 234 132 280 Z" />
+  <!-- 가장 바깥 flame -->
+  <path class="navy" d="M 93 268 Q 103 198 84 136 Q 68 82 82 20 Q 86 -14 101 -36 Q 106 -44 110 -36 Q 98 -4 105 46 Q 113 110 97 165 Q 83 218 100 268 Z" />
+
+  <!-- ── 책 (중앙 하단) ── -->
+  <!-- 책 테두리 -->
+  <rect class="navy" x="110" y="216" width="100" height="72" rx="3"/>
+  <rect fill="white" x="114" y="220" width="96" height="64" rx="2"/>
+  <!-- 책 가운데선 -->
+  <rect class="navy" x="160" y="220" width="3" height="64"/>
+  <!-- 책 테두리 안쪽 -->
+  <rect class="navy" x="110" y="216" width="100" height="5"/>
+  <rect class="navy" x="110" y="283" width="100" height="5"/>
+
+  <!-- 왼쪽 페이지 펜촉 모양 -->
+  <path class="navy" d="M 137 240 L 144 228 L 151 240 L 148 252 L 144 258 L 140 252 Z"/>
+  <line x1="144" y1="228" x2="144" y2="280" stroke="#1A3175" stroke-width="2"/>
+
+  <!-- 오른쪽 페이지 사슴 머리 -->
+  <!-- 사슴 얼굴 -->
+  <ellipse class="navy" cx="181" cy="256" rx="10" ry="12"/>
+  <!-- 사슴 뿔 왼쪽 -->
+  <path class="navy" d="M 175 248 L 170 235 L 166 228 M 170 235 L 165 232" stroke="#1A3175" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 사슴 뿔 오른쪽 -->
+  <path class="navy" d="M 187 248 L 192 235 L 196 228 M 192 235 L 197 232" stroke="#1A3175" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- 책 장식 위아래 선 -->
+  <path class="navy" d="M 110 214 L 135 208 L 185 206 L 210 208 L 210 216 L 110 216 Z"/>
+
+  <!-- ── JEJU 텍스트 ── -->
+  <text
+    x="160" y="328"
+    font-family="'Arial', 'Helvetica Neue', sans-serif"
+    font-size="36"
+    font-weight="900"
+    fill="#1A3175"
+    text-anchor="middle"
+    letter-spacing="6"
+  >JEJU</text>
+
+  <!-- ── 1952 텍스트 ── -->
+  <text
+    x="160" y="362"
+    font-family="'Arial', 'Helvetica Neue', sans-serif"
+    font-size="26"
+    font-weight="700"
+    fill="#1A3175"
+    text-anchor="middle"
+    letter-spacing="4"
+  >1952</text>
+</svg>

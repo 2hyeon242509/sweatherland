@@ -6,6 +6,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SHADOW } from '../constants';
+import SweatOutLogo from '../components/SweatOutLogo';
+import JejuLogo from '../components/JejuLogo';
 
 const isWeb = Platform.OS === 'web';
 
@@ -55,10 +57,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           >
             {/* ── 로고 영역 ─────────────────────────────── */}
             <View style={styles.logoArea}>
-              <View style={styles.logoBox}>
-                <Text style={styles.logoMark}>S</Text>
-              </View>
-              <Text style={styles.logoTitle}>SWEAT OUT</Text>
+              <SweatOutLogo width={200} height={118} color="#1A3352" />
               <Text style={styles.logoSub}>S.WEATHER LAND</Text>
             </View>
 
@@ -91,6 +90,12 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   <Text style={styles.primaryBtnText}>시작하기</Text>
                   <Ionicons name="arrow-forward" size={18} color="#FFF" style={{ marginLeft: 6 }} />
                 </TouchableOpacity>
+
+                {/* 제주대 로고 */}
+                <View style={styles.jejuRow}>
+                  <JejuLogo width={28} height={35} color={COLORS.border} />
+                  <Text style={styles.jejuText}>제주대학교 학생 건강증진 프로젝트</Text>
+                </View>
               </View>
             )}
 
@@ -201,24 +206,21 @@ const styles = StyleSheet.create({
   // ── 로고 ──────────────────────────────────────
   logoArea: {
     alignItems: 'center',
-    paddingTop: 48,
-    paddingBottom: 32,
-  },
-  logoBox: {
-    width: 64, height: 64, borderRadius: 20,
-    backgroundColor: COLORS.navy,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: COLORS.navyDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
-  },
-  logoMark: { fontSize: 32, fontWeight: '800', color: '#FFF', fontFamily: FONTS.bold },
-  logoTitle: {
-    fontSize: 22, fontWeight: '800', color: COLORS.navy,
-    letterSpacing: 3, marginBottom: 4, fontFamily: FONTS.bold,
+    paddingTop: 36,
+    paddingBottom: 20,
+    gap: 6,
   },
   logoSub: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1.5, fontFamily: FONTS.medium },
+
+  // ── 제주대 ────────────────────────────────────
+  jejuRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8, marginTop: 20, paddingVertical: 12,
+    borderTopWidth: 1, borderTopColor: COLORS.border,
+  },
+  jejuText: {
+    fontSize: 11, color: COLORS.border, fontFamily: FONTS.medium,
+  },
 
   // ── 스텝 공통 ─────────────────────────────────
   stepWrap: { paddingHorizontal: 24, flex: 1 },
