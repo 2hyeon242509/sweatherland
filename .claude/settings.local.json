@@ -15,7 +15,12 @@
       "Bash(Select-Object FullName)",
       "Bash(cd /mnt/c/Users/박이현/sweatherland && cat package.json | grep expo-font)",
       "PowerShell(gh --version 2>&1)",
-      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); gh --version)"
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); gh --version)",
+      "WebFetch(domain:sweatherland.vercel.app)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(Select-String -NotMatch \"NativeCommandError|CategoryInfo|FullyQualifiedErrorId\")"
     ]
   }
 }

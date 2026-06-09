@@ -6,7 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGame } from '../store/GameContext';
-import { COLORS, SHADOW } from '../constants';
+import { COLORS, FONTS, SHADOW } from '../constants';
 
 const MOCK_HISTORY = [
   { date: '2024.05.21  12:10', from: 500, to: 50 },
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8,
   },
   iconBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 17, fontWeight: '700', color: COLORS.text },
+  title: { fontSize: 17, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
 
   heroBanner: {
     backgroundColor: COLORS.navyLight,
@@ -199,22 +199,22 @@ const styles = StyleSheet.create({
     padding: 20, borderWidth: 1, borderColor: COLORS.border,
   },
   heroBannerLabel: {
-    fontSize: 11, fontWeight: '700', color: COLORS.navy,
-    letterSpacing: 0.5, marginBottom: 8,
+    fontSize: 12, fontWeight: '700', color: COLORS.navy,
+    letterSpacing: 0.5, marginBottom: 8, fontFamily: FONTS.bold,
   },
-  heroBannerTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, lineHeight: 22 },
+  heroBannerTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, lineHeight: 22, fontFamily: FONTS.bold },
 
   mileageSection: {
     backgroundColor: COLORS.card, borderRadius: 20, marginHorizontal: 16,
     padding: 20, marginBottom: 12, borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
   },
   mileageSectionLabel: {
-    fontSize: 12, fontWeight: '600', color: COLORS.textMuted, marginBottom: 8, letterSpacing: 0.5,
+    fontSize: 12, fontWeight: '700', color: COLORS.textMuted, marginBottom: 8, letterSpacing: 0.5, fontFamily: FONTS.bold,
   },
   mileageRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
   mileageShoe: { fontSize: 28 },
-  mileageNumber: { fontSize: 40, fontWeight: '800', color: COLORS.text, lineHeight: 46 },
-  mileageUnit: { fontSize: 16, fontWeight: '600', color: COLORS.textMuted, paddingBottom: 5 },
+  mileageNumber: { fontSize: 40, fontWeight: '800', color: COLORS.text, lineHeight: 46, fontFamily: FONTS.bold },
+  mileageUnit: { fontSize: 16, fontWeight: '700', color: COLORS.textMuted, paddingBottom: 5, fontFamily: FONTS.bold },
 
   exchangeRateCard: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card,
@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
   },
   rateBox: { flex: 1, borderRadius: 14, paddingVertical: 14, alignItems: 'center', gap: 4 },
   rateBoxEmoji: { fontSize: 28 },
-  rateBoxNum: { fontSize: 22, fontWeight: '800', color: COLORS.navy },
-  rateBoxUnit: { fontSize: 11, fontWeight: '600', color: COLORS.navy },
+  rateBoxNum: { fontSize: 22, fontWeight: '800', color: COLORS.navy, fontFamily: FONTS.bold },
+  rateBoxUnit: { fontSize: 12, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bold },
   arrowWrap: { paddingHorizontal: 14, alignItems: 'center' },
 
   bonusCard: {
@@ -236,16 +236,16 @@ const styles = StyleSheet.create({
   bonusBadge: { backgroundColor: COLORS.navy, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
   bonusBadgeText: { fontSize: 13, fontWeight: '800', color: '#FFF' },
   bonusTextWrap: { flex: 1 },
-  bonusTitle: { fontSize: 12, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-  bonusDesc: { fontSize: 11, color: COLORS.textMuted, lineHeight: 17 },
+  bonusTitle: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 2, fontFamily: FONTS.bold },
+  bonusDesc: { fontSize: 12, color: COLORS.textMuted, lineHeight: 18, fontFamily: FONTS.medium },
   bonusStars: { alignItems: 'center' },
 
   energyInfo: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, marginBottom: 10,
   },
-  energyInfoText: { fontSize: 13, color: COLORS.textMuted },
-  energyInfoVal: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  energyInfoText: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  energyInfoVal: { fontSize: 14, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
 
   resultMsg: {
     textAlign: 'center', fontSize: 13, color: COLORS.navy,
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
   exchangeBtnDisabled: { backgroundColor: COLORS.border, shadowOpacity: 0, elevation: 0 },
-  exchangeBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  notEnoughHint: { textAlign: 'center', fontSize: 12, color: COLORS.textMuted, marginBottom: 20 },
+  exchangeBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  notEnoughHint: { textAlign: 'center', fontSize: 12, color: COLORS.textMuted, marginBottom: 20, fontFamily: FONTS.medium },
 
   historySection: {
     backgroundColor: COLORS.card, borderRadius: 20, marginHorizontal: 16,
@@ -271,8 +271,8 @@ const styles = StyleSheet.create({
   sectionRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text },
-  sectionLink: { fontSize: 12, color: COLORS.navy, fontWeight: '600' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  sectionLink: { fontSize: 12, color: COLORS.navy, fontWeight: '700', fontFamily: FONTS.bold },
   historyItem: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border,
@@ -281,8 +281,8 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.navyLight,
     justifyContent: 'center', alignItems: 'center',
   },
-  historyDate: { fontSize: 11, color: COLORS.textMuted, marginBottom: 2 },
-  historyDesc: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  historyDate: { fontSize: 12, color: COLORS.textMuted, marginBottom: 2, fontFamily: FONTS.medium },
+  historyDesc: { fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
   historyBadge: {
     backgroundColor: COLORS.navyLight, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4,
   },

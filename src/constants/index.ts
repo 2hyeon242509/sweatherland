@@ -1,3 +1,10 @@
+/** 폰트 패밀리 헬퍼 */
+export const FONTS = {
+  light:  'GmarketSans-Light',
+  medium: 'GmarketSans-Medium',
+  bold:   'GmarketSans-Bold',
+} as const;
+
 export const COLORS = {
   // ── 기본 ──
   bg: '#FFFFFF',

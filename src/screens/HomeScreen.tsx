@@ -6,7 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGame } from '../store/GameContext';
-import { COLORS, MOODS, SHADOW } from '../constants';
+import { COLORS, FONTS, MOODS, SHADOW } from '../constants';
 
 const isWeb = Platform.OS === 'web';
 
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
   },
-  logo: { fontSize: 19, fontWeight: '800', color: COLORS.navy, letterSpacing: 1.5 },
+  logo: { fontSize: 19, fontWeight: '800', color: COLORS.navy, letterSpacing: 1.5, fontFamily: FONTS.bold },
   bellBtn: {
     width: 36, height: 36, borderRadius: 9999,
     backgroundColor: COLORS.card,
@@ -151,16 +151,16 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: COLORS.card, borderRadius: 20, padding: 16,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
   },
-  greetText: { fontSize: 15, fontWeight: '700', color: COLORS.text, lineHeight: 22, marginBottom: 4 },
-  greetSub: { fontSize: 11, color: COLORS.textMuted },
+  greetText: { fontSize: 15, fontWeight: '700', color: COLORS.text, lineHeight: 22, marginBottom: 4, fontFamily: FONTS.bold },
+  greetSub: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
   weatherCard: {
     flex: 1, backgroundColor: COLORS.card, borderRadius: 20, padding: 16, alignItems: 'center',
     borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
   },
-  weatherCardTitle: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted, marginBottom: 6, letterSpacing: 0.5 },
+  weatherCardTitle: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, marginBottom: 6, letterSpacing: 0.5, fontFamily: FONTS.medium },
   weatherCardEmoji: { fontSize: 32 },
-  weatherCardName: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginTop: 4 },
-  weatherCardSub: { fontSize: 10, color: COLORS.textMuted, marginTop: 3, textAlign: 'center' },
+  weatherCardName: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginTop: 4, fontFamily: FONTS.bold },
+  weatherCardSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 3, textAlign: 'center', fontFamily: FONTS.medium },
 
   // ── 에너지 카드 ────────────────────────────────
   energyCard: {
@@ -168,16 +168,16 @@ const styles = StyleSheet.create({
     marginBottom: 14, borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
   },
   energyLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  energyLabel:  { fontSize: 13, fontWeight: '700', color: COLORS.text },
-  energyValue:  { fontSize: 12, color: COLORS.textMuted },
+  energyLabel:  { fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  energyValue:  { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
   energyBarBg: { height: 10, backgroundColor: COLORS.navyLight, borderRadius: 9999, overflow: 'hidden' },
   energyBarFill: { height: '100%', backgroundColor: COLORS.navy, borderRadius: 9999 },
   energyDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
   sweatRow:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sweatEmoji: { fontSize: 16 },
-  sweatLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text },
-  sweatValue: { fontSize: 16, fontWeight: '800', color: COLORS.navy },
-  sweatUnit:  { fontSize: 11, color: COLORS.textMuted, paddingBottom: 1 },
+  sweatLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  sweatValue: { fontSize: 16, fontWeight: '800', color: COLORS.navy, fontFamily: FONTS.bold },
+  sweatUnit:  { fontSize: 12, color: COLORS.textMuted, paddingBottom: 1, fontFamily: FONTS.medium },
 
   // ── 메뉴 그리드 ────────────────────────────────
   menuRow:  { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 10 },
@@ -192,5 +192,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   menuEmoji: { fontSize: 24 },
-  menuLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+  menuLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
 });

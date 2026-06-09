@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SHADOW } from '../constants';
+import { COLORS, FONTS, SHADOW } from '../constants';
 
 const isWeb = Platform.OS === 'web';
 
@@ -213,25 +213,25 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
   },
-  logoMark: { fontSize: 32, fontWeight: '800', color: '#FFF' },
+  logoMark: { fontSize: 32, fontWeight: '800', color: '#FFF', fontFamily: FONTS.bold },
   logoTitle: {
     fontSize: 22, fontWeight: '800', color: COLORS.navy,
-    letterSpacing: 3, marginBottom: 4,
+    letterSpacing: 3, marginBottom: 4, fontFamily: FONTS.bold,
   },
-  logoSub: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1.5 },
+  logoSub: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1.5, fontFamily: FONTS.medium },
 
   // ── 스텝 공통 ─────────────────────────────────
   stepWrap: { paddingHorizontal: 24, flex: 1 },
   stepHeader: { marginBottom: 28 },
   stepNum: {
     fontSize: 12, fontWeight: '700', color: COLORS.navy,
-    letterSpacing: 1, marginBottom: 8,
+    letterSpacing: 1, marginBottom: 8, fontFamily: FONTS.bold,
   },
   stepTitle: {
     fontSize: 26, fontWeight: '800', color: COLORS.text,
-    lineHeight: 34, marginBottom: 8,
+    lineHeight: 34, marginBottom: 8, fontFamily: FONTS.bold,
   },
-  stepDesc: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21 },
+  stepDesc: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21, fontFamily: FONTS.medium },
 
   // ── 웰컴 카드 ─────────────────────────────────
   welcomeCard: {
@@ -242,10 +242,10 @@ const styles = StyleSheet.create({
   welcomeEmoji: { fontSize: 56, marginBottom: 12 },
   welcomeTitle: {
     fontSize: 22, fontWeight: '800', color: COLORS.text,
-    textAlign: 'center', lineHeight: 30, marginBottom: 12,
+    textAlign: 'center', lineHeight: 30, marginBottom: 12, fontFamily: FONTS.bold,
   },
   welcomeDesc: {
-    fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22,
+    fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, fontFamily: FONTS.medium,
   },
 
   featureList: { marginBottom: 28, gap: 12 },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     padding: 14, borderWidth: 1, borderColor: COLORS.border,
   },
   featureEmoji: { fontSize: 22 },
-  featureText: { fontSize: 13, color: COLORS.text, fontWeight: '500', flex: 1 },
+  featureText: { fontSize: 13, color: COLORS.text, fontWeight: '700', flex: 1, fontFamily: FONTS.medium },
 
   // ── 닉네임 입력 ───────────────────────────────
   inputCard: {
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   charCount: { fontSize: 12, color: COLORS.border },
   errorText: { fontSize: 13, color: COLORS.navyDark, marginTop: 8 },
-  inputHint: { fontSize: 11, color: COLORS.border, marginTop: 10 },
+  inputHint: { fontSize: 11, color: COLORS.border, marginTop: 10, fontFamily: FONTS.medium },
 
   // ── 프로필 미리보기 ───────────────────────────
   previewCard: {
@@ -287,8 +287,8 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: COLORS.border,
   },
   previewAvatarEmoji: { fontSize: 32 },
-  previewName: { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
-  previewId: { fontSize: 12, color: COLORS.textMuted },
+  previewName: { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 4, fontFamily: FONTS.bold },
+  previewId: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
 
   // ── 이모지 그리드 ─────────────────────────────
   emojiGrid: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
+  primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
   backLink: { alignItems: 'center', paddingVertical: 8 },
-  backLinkText: { fontSize: 13, color: COLORS.textMuted },
+  backLinkText: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.medium },
 });
