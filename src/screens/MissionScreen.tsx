@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center' },
-  title: { fontSize: 18, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  title: { fontSize: 18, fontWeight: '700', color: COLORS.text },
   sweatChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: COLORS.navyLight, borderRadius: 9999,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   sweatChipEmoji: { fontSize: 14 },
-  sweatChipNum: { fontSize: 13, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bold },
+  sweatChipNum: { fontSize: 13, fontWeight: '700', color: COLORS.navy },
 
   progress: {
     paddingHorizontal: 20, marginBottom: 14,
@@ -237,8 +237,8 @@ const styles = StyleSheet.create({
     padding: 16, borderWidth: 1, borderColor: COLORS.border,
   },
   progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  progressText: { fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
-  progressPct: { fontSize: 13, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bold },
+  progressText: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+  progressPct: { fontSize: 13, fontWeight: '700', color: COLORS.navy },
   progressBarBg: { height: 8, backgroundColor: COLORS.border, borderRadius: 4, overflow: 'hidden' },
   progressBarFill: { height: '100%', backgroundColor: COLORS.navy, borderRadius: 4 },
 
@@ -251,9 +251,9 @@ const styles = StyleSheet.create({
   itemDone: { opacity: 0.55 },
   itemEmoji: { fontSize: 28 },
   itemInfo: { flex: 1 },
-  itemLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  itemLabel: { fontSize: 15, fontWeight: '700', color: COLORS.text },
   itemLabelDone: { textDecorationLine: 'line-through', color: COLORS.border },
-  itemMeta: { fontSize: 12, color: COLORS.textMuted, marginTop: 3, fontFamily: FONTS.medium },
+  itemMeta: { fontSize: 12, color: COLORS.textMuted, marginTop: 3 },
   circle: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: COLORS.border },
 
   overlay: {
@@ -266,10 +266,10 @@ const styles = StyleSheet.create({
     alignItems: 'center', gap: 8, ...SHADOW,
   },
   modalEmoji: { fontSize: 52, marginBottom: 4 },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, fontFamily: FONTS.bold },
-  modalBody: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 21, fontFamily: FONTS.medium },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+  modalBody: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 21 },
   modalReward: {
-    fontSize: 13, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bold,
+    fontSize: 13, fontWeight: '700', color: COLORS.navy,
     backgroundColor: COLORS.navyLight, borderRadius: 9999,
     paddingHorizontal: 14, paddingVertical: 5, marginTop: 4,
   },
@@ -279,24 +279,24 @@ const styles = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center',
     borderWidth: 1, borderColor: COLORS.border,
   },
-  cancelBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.textMuted, fontFamily: FONTS.bold },
+  cancelBtnText: { fontSize: 15, fontWeight: '700', color: COLORS.textMuted },
   confirmBtn: {
     flex: 1, backgroundColor: COLORS.navy, borderRadius: 9999,
     paddingVertical: 14, alignItems: 'center',
     shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
 
   celebCard: {
     width: '100%', backgroundColor: COLORS.card, borderRadius: 28, padding: 32,
     alignItems: 'center', gap: 10, ...SHADOW,
   },
   celebEmoji: { fontSize: 72 },
-  celebTitle: { fontSize: 24, fontWeight: '800', color: COLORS.text, fontFamily: FONTS.bold },
-  celebSub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, fontFamily: FONTS.medium },
+  celebTitle: { fontSize: 24, fontWeight: '800', color: COLORS.text },
+  celebSub: { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22 },
   celebReward: {
-    fontSize: 14, fontWeight: '700', color: COLORS.navy, fontFamily: FONTS.bold,
+    fontSize: 14, fontWeight: '700', color: COLORS.navy,
     backgroundColor: COLORS.navyLight, borderRadius: 9999,
     paddingHorizontal: 16, paddingVertical: 6, marginTop: 4,
   },

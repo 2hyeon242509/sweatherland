@@ -431,11 +431,11 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 16 },
 
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, fontFamily: FONTS.bold },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text },
 
   sectionLabel: {
     fontSize: 13, fontWeight: '700', color: COLORS.textMuted,
-    paddingHorizontal: 20, marginBottom: 8, marginTop: 14, fontFamily: FONTS.bold,
+    paddingHorizontal: 20, marginBottom: 8, marginTop: 14,
   },
 
   profileCard: {
@@ -453,14 +453,14 @@ const styles = StyleSheet.create({
   avatarEmoji: { fontSize: 30 },
   profileInfo: { flex: 1, gap: 4 },
   profileTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  profileNickname: { fontSize: 15, fontWeight: '800', color: COLORS.text, flexShrink: 1, fontFamily: FONTS.bold },
+  profileNickname: { fontSize: 15, fontWeight: '800', color: COLORS.text, flexShrink: 1 },
   profileUniqueId: {
     fontSize: 11, fontWeight: '700', color: COLORS.navy,
     backgroundColor: COLORS.navyLight, borderRadius: 6,
-    paddingHorizontal: 6, paddingVertical: 2, fontFamily: FONTS.bold,
+    paddingHorizontal: 6, paddingVertical: 2,
   },
-  profileStatus: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic', fontFamily: FONTS.medium },
-  profileStatusEmpty: { fontSize: 12, color: COLORS.border, fontStyle: 'italic', fontFamily: FONTS.medium },
+  profileStatus: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic' },
+  profileStatusEmpty: { fontSize: 12, color: COLORS.border, fontStyle: 'italic' },
   editBtn: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: COLORS.navyLight, justifyContent: 'center', alignItems: 'center',
@@ -476,15 +476,15 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
   },
   actionChipEmoji: { fontSize: 14 },
-  actionChipLabel: { fontSize: 12, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  actionChipLabel: { fontSize: 12, fontWeight: '700', color: COLORS.text },
   codeChip: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: COLORS.navyLight, borderRadius: 9999,
     paddingHorizontal: 12, paddingVertical: 8,
     borderWidth: 1, borderColor: COLORS.border,
   },
-  codeChipText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '700', fontFamily: FONTS.medium },
-  codeChipId: { fontWeight: '800', color: COLORS.navy, fontFamily: FONTS.bold },
+  codeChipText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '700' },
+  codeChipId: { fontWeight: '800', color: COLORS.navy },
 
   searchRow: {
     flexDirection: 'row', gap: 8, paddingHorizontal: 16, alignItems: 'center',
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 20, marginTop: 10,
   },
-  searchMsgText: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  searchMsgText: { fontSize: 13, color: COLORS.textMuted },
   searchResultWrap: { marginTop: 8 },
 
   addBtn: {
@@ -530,8 +530,8 @@ const styles = StyleSheet.create({
 
   emptyFriends: { alignItems: 'center', paddingVertical: 32, gap: 6 },
   emptyEmoji: { fontSize: 40 },
-  emptyText: { fontSize: 15, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
-  emptySubText: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  emptyText: { fontSize: 15, fontWeight: '700', color: COLORS.text },
+  emptySubText: { fontSize: 12, color: COLORS.textMuted },
 
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -543,8 +543,8 @@ const styles = StyleSheet.create({
     width: '100%', backgroundColor: COLORS.card,
     borderRadius: 24, padding: 24, alignItems: 'center', gap: 10, ...SHADOW,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text, fontFamily: FONTS.bold },
-  modalSub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', fontFamily: FONTS.medium },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  modalSub: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center' },
   closeBtn: {
     position: 'absolute', top: 12, right: 12,
     width: 30, height: 30, borderRadius: 15,
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
 
   deleteModalBtns: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
   deleteCancelBtn: {
@@ -588,12 +588,12 @@ const styles = StyleSheet.create({
     borderRadius: 9999, paddingVertical: 13,
     alignItems: 'center', borderWidth: 1.5, borderColor: COLORS.border,
   },
-  deleteCancelText: { fontSize: 14, fontWeight: '700', color: COLORS.textMuted, fontFamily: FONTS.bold },
+  deleteCancelText: { fontSize: 14, fontWeight: '700', color: COLORS.textMuted },
   deleteConfirmBtn: {
     flex: 1, backgroundColor: COLORS.navyDark,
     borderRadius: 9999, paddingVertical: 13, alignItems: 'center',
     shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  deleteConfirmText: { fontSize: 14, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  deleteConfirmText: { fontSize: 14, fontWeight: '700', color: '#FFF' },
 });

@@ -245,12 +245,12 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center',
   },
-  title: { fontSize: 17, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.bold },
+  title: { fontSize: 17, fontWeight: '700', color: COLORS.text },
 
   // ── 질문 ────────────────────────────────────
   questionSection: { paddingHorizontal: 20, marginBottom: 16, marginTop: 4 },
-  questionTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 4, fontFamily: FONTS.bold },
-  questionSub: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  questionTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  questionSub: { fontSize: 13, color: COLORS.textMuted },
 
   // ── 감정 버튼 ────────────────────────────────
   moodScroll: { paddingHorizontal: 16, paddingBottom: 4, gap: 10, marginBottom: 20 },
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.navy,
     justifyContent: 'center', alignItems: 'center',
   },
-  moodBtnLabel: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
-  moodBtnLabelSelected: { color: COLORS.navy, fontWeight: '700', fontFamily: FONTS.bold },
+  moodBtnLabel: { fontSize: 12, color: COLORS.textMuted },
+  moodBtnLabelSelected: { color: COLORS.navy, fontWeight: '700' },
 
   // ── 노트패드 ──────────────────────────────────
   notepadCard: {
@@ -298,14 +298,13 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: COLORS.border,
   },
   notepadContent: { flex: 1, padding: 14, position: 'relative' },
-  notepadTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 2, fontFamily: FONTS.bold },
-  notepadSub: { fontSize: 12, color: COLORS.textMuted, marginBottom: 8, fontFamily: FONTS.medium },
-  notepadHint: { fontSize: 12, color: COLORS.border, lineHeight: 18, marginBottom: 8, fontFamily: FONTS.medium },
+  notepadTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  notepadSub: { fontSize: 12, color: COLORS.textMuted, marginBottom: 8 },
+  notepadHint: { fontSize: 12, color: COLORS.border, lineHeight: 18, marginBottom: 8 },
   noteLine: { height: 1, backgroundColor: '#F0F0F0', marginBottom: 10 },
   noteInput: {
     fontSize: 13, color: COLORS.text,
     minHeight: 60, paddingTop: 0, paddingBottom: 20,
-    fontFamily: FONTS.medium,
   },
   pencilWrap: { position: 'absolute', bottom: 10, right: 12 },
 
@@ -317,8 +316,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   cheerLeft: { flex: 1 },
-  cheerLabel: { fontSize: 12, fontWeight: '700', color: COLORS.navy, marginBottom: 6, letterSpacing: 0.5, fontFamily: FONTS.bold },
-  cheerText: { fontSize: 14, fontWeight: '700', color: COLORS.text, lineHeight: 22, fontFamily: FONTS.bold },
+  cheerLabel: { fontSize: 12, fontWeight: '700', color: COLORS.navy, marginBottom: 6, letterSpacing: 0.5 },
+  cheerText: { fontSize: 14, fontWeight: '700', color: COLORS.text, lineHeight: 22 },
   cheerDeco: { alignItems: 'center', gap: 2, paddingLeft: 10 },
 
   // ── 페이지 닷 ────────────────────────────────
@@ -330,7 +329,6 @@ const styles = StyleSheet.create({
   energyHint: {
     textAlign: 'center', fontSize: 12, color: COLORS.textMuted,
     marginBottom: 8, paddingHorizontal: 16,
-    fontFamily: FONTS.medium,
   },
   errText: {
     textAlign: 'center', fontSize: 13, color: COLORS.navyDark, marginBottom: 8,
@@ -345,5 +343,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
     marginBottom: 8,
   },
-  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
 });

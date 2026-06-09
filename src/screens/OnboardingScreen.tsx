@@ -57,7 +57,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           >
             {/* ── 로고 영역 ─────────────────────────────── */}
             <View style={styles.logoArea}>
-              <SweatOutLogo width={200} height={118} color="#1A3352" />
+              <SweatOutLogo width={200} height={118} />
               <Text style={styles.logoSub}>S.WEATHER LAND</Text>
             </View>
 
@@ -93,7 +93,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
                 {/* 제주대 로고 */}
                 <View style={styles.jejuRow}>
-                  <JejuLogo width={28} height={35} color={COLORS.border} />
+                  <JejuLogo width={28} height={35} />
                   <Text style={styles.jejuText}>제주대학교 학생 건강증진 프로젝트</Text>
                 </View>
               </View>
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     gap: 6,
   },
-  logoSub: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1.5, fontFamily: FONTS.medium },
+  logoSub: { fontSize: 12, color: COLORS.textMuted, letterSpacing: 1.5 },
 
   // ── 제주대 ────────────────────────────────────
   jejuRow: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: COLORS.border,
   },
   jejuText: {
-    fontSize: 11, color: COLORS.border, fontFamily: FONTS.medium,
+    fontSize: 11, color: COLORS.border,
   },
 
   // ── 스텝 공통 ─────────────────────────────────
@@ -227,13 +227,13 @@ const styles = StyleSheet.create({
   stepHeader: { marginBottom: 28 },
   stepNum: {
     fontSize: 12, fontWeight: '700', color: COLORS.navy,
-    letterSpacing: 1, marginBottom: 8, fontFamily: FONTS.bold,
+    letterSpacing: 1, marginBottom: 8,
   },
   stepTitle: {
     fontSize: 26, fontWeight: '800', color: COLORS.text,
-    lineHeight: 34, marginBottom: 8, fontFamily: FONTS.bold,
+    lineHeight: 34, marginBottom: 8,
   },
-  stepDesc: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21, fontFamily: FONTS.medium },
+  stepDesc: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21 },
 
   // ── 웰컴 카드 ─────────────────────────────────
   welcomeCard: {
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
   welcomeEmoji: { fontSize: 56, marginBottom: 12 },
   welcomeTitle: {
     fontSize: 22, fontWeight: '800', color: COLORS.text,
-    textAlign: 'center', lineHeight: 30, marginBottom: 12, fontFamily: FONTS.bold,
+    textAlign: 'center', lineHeight: 30, marginBottom: 12,
   },
   welcomeDesc: {
-    fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22, fontFamily: FONTS.medium,
+    fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 22,
   },
 
   featureList: { marginBottom: 28, gap: 12 },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     padding: 14, borderWidth: 1, borderColor: COLORS.border,
   },
   featureEmoji: { fontSize: 22 },
-  featureText: { fontSize: 13, color: COLORS.text, fontWeight: '700', flex: 1, fontFamily: FONTS.medium },
+  featureText: { fontSize: 13, color: COLORS.text, fontWeight: '700', flex: 1 },
 
   // ── 닉네임 입력 ───────────────────────────────
   inputCard: {
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
   },
   charCount: { fontSize: 12, color: COLORS.border },
   errorText: { fontSize: 13, color: COLORS.navyDark, marginTop: 8 },
-  inputHint: { fontSize: 11, color: COLORS.border, marginTop: 10, fontFamily: FONTS.medium },
+  inputHint: { fontSize: 11, color: COLORS.border, marginTop: 10 },
 
   // ── 프로필 미리보기 ───────────────────────────
   previewCard: {
@@ -289,8 +289,8 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: COLORS.border,
   },
   previewAvatarEmoji: { fontSize: 32 },
-  previewName: { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 4, fontFamily: FONTS.bold },
-  previewId: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  previewName: { fontSize: 18, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  previewId: { fontSize: 12, color: COLORS.textMuted },
 
   // ── 이모지 그리드 ─────────────────────────────
   emojiGrid: {
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
-  primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF', fontFamily: FONTS.bold },
+  primaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
   backLink: { alignItems: 'center', paddingVertical: 8 },
-  backLinkText: { fontSize: 13, color: COLORS.textMuted, fontFamily: FONTS.medium },
+  backLinkText: { fontSize: 13, color: COLORS.textMuted },
 });
