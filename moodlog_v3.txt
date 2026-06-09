@@ -1,0 +1,180 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TouchableOpacity, TextInput,
+  ScrollView, StyleSheet, SafeAreaView,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useGame } from '../store/GameContext';
+import { MOODS, MoodId } from '../constants';
+import { saveMoodLog, isSupabaseConfigured } from '../lib/supabase';
+import { saveLocalLog } from '../lib/localLogs';
+
+const kstToday = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+
+const MOOD_ENERGY_DATE_KEY  = '@mood_energy_date';
+const MOOD_ENERGY_COUNT_KEY = '@mood_energy_count';
+const MAX_DAILY_ENERGY_LOGS = 2;
+
+export default function MoodLogScreen() {
+  const navigation = useNavigation();
+  const { setMood, addEnergy, characterName } = useGame();
+
+  const [selected,   setSelected]   = useState<MoodId | null>(null);
+  const [memo,       setMemo]       = useState('');
+  const [todayCount, setTodayCount] = useState(0);
+  const [saveError,  setSaveError]  = useState('');
+
+  // 오늘 에너지 획득 횟수 로드
+  useEffect(() => {
+    (async () => {
+      const [savedDate, savedCount] = await Promise.all([
+        AsyncStorage.getItem(MOOD_ENERGY_DATE_KEY),
+        AsyncStorage.getItem(MOOD_ENERGY_COUNT_KEY),
+      ]);
+      if (savedDate === kstToday()) {
+        setTodayCount(parseInt(savedCount ?? '0', 10));
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    if (!selected) {
+      setSaveError('감정을 선택해주세요.');
+      return;
+    }
+    setSaveError('');
+    setMood(selected);
+
+    // 하루 최대 2회(+20 에너지)까지만 획득
+    if (todayCount < MAX_DAILY_ENERGY_LOGS) {
+      addEnergy(10);
+      const newCount = todayCount + 1;
+      setTodayCount(newCount);
+      await Promise.all([
+        AsyncStorage.setItem(MOOD_ENERGY_DATE_KEY, kstToday()),
+        AsyncStorage.setItem(MOOD_ENERGY_COUNT_KEY, String(newCount)),
+      ]);
+    }
+
+    // 감정 기록 저장
+    const moodInfo = MOODS.find(m => m.id === selected);
+    if (moodInfo) {
+      const logData = {
+        user_name:  characterName,
+        mood_id:    selected,
+        mood_label: moodInfo.label,
+        memo:       memo.trim(),
+      };
+      if (isSupabaseConfigured()) {
+        saveMoodLog(logData).catch(() => {});
+      } else {
+        saveLocalLog(logData).catch(() => {});
+      }
+    }
+
+    navigation.goBack();
+  };
+
+  return (
+    <SafeAreaView style={s.safe}>
+
+      {/* ── 헤더 ─────────────────────────────── */}
+      <View style={s.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn}>
+          <Text style={s.backText}>←</Text>
+        </TouchableOpacity>
+        <Text style={s.title}>감정 기록</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+
+        {/* ── 감정 선택 ─────────────────────── */}
+        <View style={s.section}>
+          <Text style={s.question}>오늘 기분이 어때요?</Text>
+          <Text style={s.questionSub}>지금 내 마음에 가까운 날씨를 선택해봐요.</Text>
+          <View style={s.moodGrid}>
+            {MOODS.map(mood => (
+              <TouchableOpacity
+                key={mood.id}
+                style={[s.moodBtn, selected === mood.id && s.moodBtnSelected]}
+                onPress={() => { setSelected(mood.id); setSaveError(''); }}
+              >
+                <Text style={s.moodEmoji}>{mood.emoji}</Text>
+                <Text style={[s.moodLabel, selected === mood.id && s.moodLabelSelected]}>
+                  {mood.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* ── 메모 ──────────────────────────── */}
+        <View style={s.section}>
+          <Text style={s.sectionTitle}>오늘 어떤 일이 있었나요?</Text>
+          <TextInput
+            style={s.memoInput}
+            placeholder="자유롭게 적어봐요..."
+            placeholderTextColor="#bbb"
+            multiline
+            value={memo}
+            onChangeText={setMemo}
+            textAlignVertical="top"
+          />
+        </View>
+
+      </ScrollView>
+
+      {/* ── 저장 버튼 ─────────────────────── */}
+      <View style={s.saveWrap}>
+        <Text style={s.energyHint}>
+          {todayCount < MAX_DAILY_ENERGY_LOGS
+            ? `💧 오늘 에너지 획득 ${todayCount}/${MAX_DAILY_ENERGY_LOGS}회 (기록 시 +10 에너지)`
+            : '✅ 오늘 에너지 획득 완료 — 기록은 계속 저장돼요'}
+        </Text>
+        {saveError ? <Text style={s.errText}>{saveError}</Text> : null}
+        <TouchableOpacity style={s.saveBtn} onPress={handleSave}>
+          <Text style={s.saveBtnText}>저장하기</Text>
+        </TouchableOpacity>
+      </View>
+
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  safe:   { flex: 1, backgroundColor: '#fff' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  backBtn:  { width: 40, justifyContent: 'center' },
+  backText: { fontSize: 22 },
+  title:  { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700' },
+  scroll: { paddingBottom: 16 },
+
+  section:      { padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', marginBottom: 10 },
+  question:     { fontSize: 22, fontWeight: '800', marginBottom: 4 },
+  questionSub:  { fontSize: 13, color: '#888', marginBottom: 16 },
+
+  moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  moodBtn: {
+    width: '18%', minWidth: 56, alignItems: 'center',
+    paddingVertical: 10, paddingHorizontal: 4,
+    borderWidth: 1.5, borderColor: '#eee', borderRadius: 12,
+  },
+  moodBtnSelected: { borderColor: '#7B6EC2', backgroundColor: '#EDE9F5' },
+  moodEmoji:       { fontSize: 26, marginBottom: 4 },
+  moodLabel:       { fontSize: 10, color: '#999', textAlign: 'center' },
+  moodLabelSelected: { color: '#7B6EC2', fontWeight: '700' },
+
+  memoInput: {
+    borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
+    padding: 12, fontSize: 14, minHeight: 100,
+  },
+
+  saveWrap:    { padding: 16, paddingBottom: 24, borderTopWidth: 1, borderTopColor: '#eee' },
+  energyHint:  { fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 8 },
+  errText:     { fontSize: 13, color: '#E8574A', textAlign: 'center', marginBottom: 8 },
+  saveBtn:     { backgroundColor: '#6BA35A', borderRadius: 8, padding: 16, alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+});

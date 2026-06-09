@@ -1,0 +1,429 @@
+import React, { useState } from 'react';
+import {
+  View, Text, TouchableOpacity, TextInput,
+  ScrollView, StyleSheet, SafeAreaView, Alert, Platform,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useGame } from '../store/GameContext';
+import { COLORS, MOODS, MOOD_RESPONSES, MoodId, Mood } from '../constants';
+
+const DAILY_CHEER = '지금 이 순간의 너도\n충분히 소중해! 🌿';
+
+const isWeb = Platform.OS === 'web';
+
+export default function MoodLogScreen() {
+  const navigation = useNavigation();
+  const { setMood, addEnergy } = useGame();
+
+  const [selected, setSelected] = useState<MoodId | null>(null);
+  const [memo, setMemo] = useState('');
+  const [responseIdx] = useState(() => Math.floor(Math.random() * 2));
+
+  const selectedMood = MOODS.find(m => m.id === selected) ?? null;
+
+  const handleSave = () => {
+    if (!selected) {
+      Alert.alert('감정을 선택해주세요 💙');
+      return;
+    }
+    setMood(selected);
+    addEnergy(10);
+    Alert.alert('저장 완료! ✨', '오늘의 감정이 기록됐어. 마음에너지 +10!', [
+      { text: '고마워 🌱', onPress: () => navigation.goBack() },
+    ]);
+  };
+
+  return (
+    <View style={styles.outerWrap}>
+      <SafeAreaView style={styles.safe}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Header ──────────────────────────────── */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>감정 입력 워크북</Text>
+            <TouchableOpacity style={styles.iconBtn}>
+              <Ionicons name="calendar-outline" size={20} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── Mood Question ────────────────────────── */}
+          <View style={styles.questionSection}>
+            <Text style={styles.questionTitle}>오늘 기분이 어때요?</Text>
+            <Text style={styles.questionSub}>
+              지금 내 마음에 가까운 날씨를 선택해봐요.
+            </Text>
+          </View>
+
+          {/* ── Weather Icon Buttons (horizontal scroll) ── */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.moodScroll}
+          >
+            {MOODS.map(mood => (
+              <MoodButton
+                key={mood.id}
+                mood={mood}
+                isSelected={selected === mood.id}
+                onPress={() => setSelected(mood.id)}
+              />
+            ))}
+          </ScrollView>
+
+          {/* ── Character Response ───────────────────── */}
+          {selectedMood && (
+            <View style={styles.responseCard}>
+              <Text style={styles.responseChar}>🦌</Text>
+              <View style={styles.responseBubbleWrap}>
+                <View style={styles.responseBubble}>
+                  <Text style={styles.responseText}>
+                    {MOOD_RESPONSES[selectedMood.id][responseIdx]}
+                  </Text>
+                </View>
+                <View style={styles.bubbleTail} />
+              </View>
+              <TouchableOpacity style={styles.heartBtn}>
+                <Ionicons name="heart" size={16} color={COLORS.heartRed} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Notepad Memo ─────────────────────────── */}
+          <View style={styles.notepadCard}>
+            {/* Spiral decoration (left edge) */}
+            <View style={styles.spiralEdge}>
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <View key={i} style={styles.spiral} />
+              ))}
+            </View>
+            <View style={styles.notepadContent}>
+              <Text style={styles.notepadTitle}>오늘 어떤 일이 있었나요?</Text>
+              <Text style={styles.notepadSub}>자유롭게 적어보세요.</Text>
+              <Text style={styles.notepadHint}>
+                예) 기분이 좋았던 일, 힘들었던 일,{'\n'}감사했던 일 등 무엇이든 좋아요 :)
+              </Text>
+              {/* Lined paper lines */}
+              {[0, 1, 2].map(i => (
+                <View key={i} style={styles.noteLine} />
+              ))}
+              <TextInput
+                style={styles.noteInput}
+                placeholder="여기에 적어봐요..."
+                placeholderTextColor="#C8BFB0"
+                multiline
+                value={memo}
+                onChangeText={setMemo}
+                textAlignVertical="top"
+              />
+              {/* Pencil icon */}
+              <View style={styles.pencilWrap}>
+                <Ionicons name="pencil" size={16} color="#C8BFB0" />
+              </View>
+            </View>
+          </View>
+
+          {/* ── Daily Cheer ──────────────────────────── */}
+          <View style={styles.cheerCard}>
+            <View style={styles.cheerLeft}>
+              <Text style={styles.cheerLabel}>오늘의 한 줄 응원</Text>
+              <Text style={styles.cheerText}>{DAILY_CHEER}</Text>
+            </View>
+            <View style={styles.cheerDeco}>
+              <Text style={{ fontSize: 28 }}>☁️</Text>
+              <Text style={{ fontSize: 14, marginTop: -4 }}>🌸</Text>
+            </View>
+          </View>
+
+          {/* ── Page Dots ────────────────────────────── */}
+          <View style={styles.pageDots}>
+            {[0, 1, 2, 3, 4].map(i => (
+              <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
+            ))}
+          </View>
+
+          {/* ── Save Button ──────────────────────────── */}
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
+            <Text style={styles.saveBtnText}>저장하기</Text>
+            <Ionicons name="heart" size={16} color="#FFF" style={{ marginLeft: 6 }} />
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+// ── Mood Button Component ──────────────────────────────────
+function MoodButton({
+  mood,
+  isSelected,
+  onPress,
+}: {
+  mood: Mood;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={styles.moodBtnWrap}
+    >
+      <View
+        style={[
+          styles.moodIconCircle,
+          isSelected && { backgroundColor: mood.selectedBg, borderColor: mood.iconColor, borderWidth: 2 },
+        ]}
+      >
+        <Ionicons
+          name={mood.iconName as any}
+          size={28}
+          color={isSelected ? mood.iconColor : '#BBBBBB'}
+        />
+        {isSelected && (
+          <View style={styles.checkBadge}>
+            <Ionicons name="checkmark" size={9} color="#FFF" />
+          </View>
+        )}
+      </View>
+      <Text style={[styles.moodBtnLabel, isSelected && { color: mood.iconColor, fontWeight: '700' }]}>
+        {mood.label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  outerWrap: {
+    flex: 1,
+    backgroundColor: isWeb ? COLORS.yellow : COLORS.bg,
+    alignItems: isWeb ? 'center' : 'stretch',
+  },
+  safe: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    width: isWeb ? 390 : '100%',
+  },
+  scroll: { paddingBottom: 40 },
+
+  // ── Header ────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 8,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: { fontSize: 17, fontWeight: '700', color: COLORS.text },
+
+  // ── Question ──────────────────────────────────
+  questionSection: { paddingHorizontal: 20, marginBottom: 16, marginTop: 4 },
+  questionTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  questionSub: { fontSize: 13, color: COLORS.textMuted },
+
+  // ── Mood Scroll ───────────────────────────────
+  moodScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+    gap: 10,
+    marginBottom: 20,
+  },
+  moodBtnWrap: { alignItems: 'center', width: 72 },
+  moodIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+    position: 'relative',
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: COLORS.green,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moodBtnLabel: { fontSize: 11, color: '#AAAAAA' },
+
+  // ── Character Response ────────────────────────
+  responseCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 8,
+  },
+  responseChar: { fontSize: 48, lineHeight: 54 },
+  responseBubbleWrap: { flex: 1, position: 'relative' },
+  responseBubble: {
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bubbleTail: {
+    position: 'absolute',
+    bottom: 6,
+    left: -6,
+    width: 0,
+    height: 0,
+    borderTopWidth: 6,
+    borderRightWidth: 8,
+    borderBottomWidth: 0,
+    borderTopColor: 'transparent',
+    borderRightColor: COLORS.card,
+    borderBottomColor: 'transparent',
+  },
+  responseText: { fontSize: 13, color: COLORS.text, lineHeight: 19 },
+  heartBtn: { paddingBottom: 4 },
+
+  // ── Notepad ───────────────────────────────────
+  notepadCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.card,
+    borderRadius: 18,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+    minHeight: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  spiralEdge: {
+    width: 22,
+    backgroundColor: '#F5F0E8',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 14,
+  },
+  spiral: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#D0C8BC',
+  },
+  notepadContent: {
+    flex: 1,
+    padding: 14,
+    position: 'relative',
+  },
+  notepadTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  notepadSub: { fontSize: 11, color: COLORS.textMuted, marginBottom: 8 },
+  notepadHint: { fontSize: 11, color: '#C0B8B0', lineHeight: 17, marginBottom: 8 },
+  noteLine: {
+    height: 1,
+    backgroundColor: '#F0EBE0',
+    marginBottom: 10,
+  },
+  noteInput: {
+    fontSize: 13,
+    color: COLORS.text,
+    minHeight: 60,
+    paddingTop: 0,
+    paddingBottom: 20,
+  },
+  pencilWrap: {
+    position: 'absolute',
+    bottom: 10,
+    right: 12,
+  },
+
+  // ── Cheer Card ────────────────────────────────
+  cheerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF8E8',
+    borderRadius: 18,
+    marginHorizontal: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#D4EDCA',
+  },
+  cheerLeft: { flex: 1 },
+  cheerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.green,
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  cheerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    lineHeight: 21,
+  },
+  cheerDeco: { alignItems: 'center', gap: 2, paddingLeft: 10 },
+
+  // ── Page Dots ─────────────────────────────────
+  pageDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 20,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D8D0C8',
+  },
+  dotActive: {
+    width: 16,
+    backgroundColor: COLORS.green,
+    borderRadius: 3,
+  },
+
+  // ── Save Button ───────────────────────────────
+  saveBtn: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.green,
+    borderRadius: 18,
+    marginHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.green,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+});

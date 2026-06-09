@@ -1,0 +1,601 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity,
+  StyleSheet, SafeAreaView, Platform, TextInput, Animated,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useGame } from '../store/GameContext';
+import { COLORS, MOODS, SHADOW, ALL_FRIENDS } from '../constants';
+
+const USE_ND = Platform.OS !== 'web';
+
+// ── 캐릭터별 히어로 액세서리 ─────────────────────────────────────────────────
+const CHARACTER_ACCESSORY: Record<string, string> = {
+  jejupi: '🐠',
+  dori:   '🍀',
+  kkama:  '🍯',
+  mochi:  '🥕',
+  sunny:  '⭐',
+  momo:   '🐟',
+};
+
+const ADMIN_PIN = '1234';
+const LOCK_DURATION = 7 * 24 * 60 * 60 * 1000; // 7일
+
+const MENU_ROW1 = [
+  { label: '감정 기록', emoji: '📔', screen: 'MoodLog', bg: '#FFE8E8' },
+  { label: '미션',      emoji: '🚩', screen: 'Mission',  bg: '#FFF4D4' },
+  { label: '러닝',      emoji: '👟', screen: 'Running',  bg: '#D4F0E0' },
+] as const;
+
+const MENU_ROW2 = [
+  { label: '환전소',  emoji: '🔄', screen: 'Exchange', bg: '#E4E4F8' },
+  { label: '컬렉션',  emoji: '⭐', screen: null,       bg: '#FFF4D4' },
+] as const;
+
+const isWeb = Platform.OS === 'web';
+
+// 팡파레 응원 메시지 (캐릭터별)
+const FANFARE_MESSAGES: Record<string, string> = {
+  jejupi: '완벽한 하루야! 바다만큼 넘치는 에너지! 🌊',
+  dori:   '오늘 하루 정말 잘 해냈어. 숲처럼 든든해 🌿',
+  kkama:  '포근하고 꽉 찬 하루였어! 최고야 💜',
+  mochi:  '와아~ 에너지 가득! 너 정말 대단해 🌸',
+  sunny:  '오늘도 눈부신 하루! 에너지 만땅이야 ☀️',
+  momo:   '조용히 지켜봤는데… 진짜 잘했어 🌙',
+};
+
+export default function HomeScreen() {
+  const navigation = useNavigation<any>();
+  const {
+    energy, sweatPoints, currentMood, characterName,
+    selectedFriendIds, setCharacterName, energy100Dates, recordEnergy100Today,
+  } = useGame();
+  const moodInfo = MOODS.find(m => m.id === currentMood);
+
+  // 선택된 캐릭터
+  const selectedId     = selectedFriendIds[0] ?? 'momo';
+  const selectedFriend = ALL_FRIENDS.find(f => f.id === selectedId) ?? ALL_FRIENDS[0];
+  const heroAccessory  = CHARACTER_ACCESSORY[selectedId] ?? '🥕';
+
+  // ── 팡파레 모달 ─────────────────────────────────
+  const [showCelebration, setShowCelebration] = useState(false);
+  const celebScale   = useRef(new Animated.Value(0)).current;
+  const celebOpacity = useRef(new Animated.Value(0)).current;
+  const prevEnergy   = useRef(energy);
+
+  useEffect(() => {
+    const wasBelow = prevEnergy.current < 100;
+    const isNow100 = energy === 100;
+    prevEnergy.current = energy;
+
+    if (wasBelow && isNow100) {
+      recordEnergy100Today();
+      setShowCelebration(true);
+      celebScale.setValue(0.6);
+      celebOpacity.setValue(0);
+      Animated.parallel([
+        Animated.spring(celebScale,   { toValue: 1, useNativeDriver: USE_ND, damping: 12, stiffness: 160 }),
+        Animated.timing(celebOpacity, { toValue: 1, duration: 220, useNativeDriver: USE_ND }),
+      ]).start();
+    }
+  }, [energy]);
+
+  const closeCelebration = () => {
+    Animated.timing(celebOpacity, { toValue: 0, duration: 180, useNativeDriver: USE_ND }).start(() => {
+      setShowCelebration(false);
+    });
+  };
+
+  // ── 이름 변경 모달 ─────────────────────────────
+  const [showNameModal,       setShowNameModal]       = useState(false);
+  const [nameInput,           setNameInput]           = useState('');
+  const [nameLockUntil,       setNameLockUntil]       = useState(0);
+  const [nameAdminUnlocked,   setNameAdminUnlocked]   = useState(false);
+  const [showNameAdminModal,  setShowNameAdminModal]  = useState(false);
+  const [nameAdminPin,        setNameAdminPin]        = useState('');
+  const [nameAdminError,      setNameAdminError]      = useState('');
+
+  useEffect(() => {
+    AsyncStorage.getItem('@name_lock_until').then(val => {
+      if (val) setNameLockUntil(parseInt(val, 10));
+    }).catch(() => {});
+  }, []);
+
+  const isNameLocked  = !nameAdminUnlocked && Date.now() < nameLockUntil;
+  const nameDaysLeft  = Math.ceil((nameLockUntil - Date.now()) / (24 * 60 * 60 * 1000));
+  const nameHoursLeft = Math.ceil((nameLockUntil - Date.now()) / (60 * 60 * 1000));
+
+  const openNameModal = () => {
+    setNameInput(characterName);
+    setShowNameModal(true);
+  };
+
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed) return;
+    setCharacterName(trimmed);
+    const until = Date.now() + LOCK_DURATION;
+    setNameLockUntil(until);
+    await AsyncStorage.setItem('@name_lock_until', String(until)).catch(() => {});
+    setShowNameModal(false);
+    setNameInput('');
+    setNameAdminUnlocked(false);
+  };
+
+  const handleNameAdminPin = () => {
+    if (nameAdminPin !== ADMIN_PIN) {
+      setNameAdminError('PIN이 올바르지 않아요.');
+      setNameAdminPin('');
+      return;
+    }
+    setNameAdminUnlocked(true);
+    setShowNameAdminModal(false);
+    setNameAdminPin('');
+    setNameAdminError('');
+  };
+
+  const closeNameModal = () => {
+    setShowNameModal(false);
+    setNameInput('');
+    setNameAdminUnlocked(false);
+  };
+
+  return (
+    <View style={styles.outerWrap}>
+      <SafeAreaView style={styles.safe}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Header ─────────────────────────────── */}
+          <View style={styles.header}>
+            <Text style={styles.logo}>S.WEATHER LAND</Text>
+            <TouchableOpacity style={styles.bellBtn}>
+              <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
+
+          {/* ── Top Info Cards ──────────────────────── */}
+          <View style={styles.topCards}>
+            <View style={styles.greetCard}>
+              <View style={styles.greetIconCircle}>
+                <Text style={{ fontSize: 18 }}>🌱</Text>
+              </View>
+              <Text style={styles.greetText}>{'안녕, 오늘도\n잘 왔어!'}</Text>
+              <Text style={styles.greetSub}>오늘도 함께해서 좋아 ☺️</Text>
+            </View>
+            <View style={styles.weatherCard}>
+              <Text style={styles.weatherCardTitle}>오늘의 날씨 무드</Text>
+              <Text style={styles.weatherCardEmoji}>{moodInfo?.emoji ?? '⛅'}</Text>
+              <Text style={styles.weatherCardName}>{moodInfo?.weather ?? '맑음'}</Text>
+              <Text style={styles.weatherCardSub}>
+                {moodInfo ? `${moodInfo.label}한 하루예요!` : '기분이 포근한 하루에요!'}
+              </Text>
+            </View>
+          </View>
+
+          {/* ── Character Hero (선택된 캐릭터 반영) ── */}
+          <View style={styles.heroWrap}>
+            <View style={styles.heroSky}>
+              <Text style={styles.cloudL}>☁️</Text>
+              <Text style={styles.cloudR}>☁️</Text>
+            </View>
+            <View style={styles.heroCharWrap}>
+              <Text style={styles.heroChar}>{selectedFriend.emoji}</Text>
+              <Text style={styles.heroAccessory}>{heroAccessory}</Text>
+            </View>
+            <View style={styles.heroGrass}>
+              <Text style={styles.flower}>🌸</Text>
+              <Text style={styles.flower}>🌿</Text>
+              <Text style={styles.flower}>🌼</Text>
+              <Text style={styles.flower}>🌱</Text>
+            </View>
+          </View>
+
+          {/* ── Name tag (펜슬 탭 → 이름 변경) ─────── */}
+          <TouchableOpacity style={styles.nameRow} onPress={openNameModal} activeOpacity={0.7}>
+            <Text style={styles.charName}>{characterName}</Text>
+            <Ionicons name="pencil-outline" size={13} color={COLORS.textMuted} />
+          </TouchableOpacity>
+
+          {/* ── Energy Bar ─────────────────────────── */}
+          <View style={styles.energyCard}>
+            <View style={styles.energyLabelRow}>
+              <Ionicons name="heart" size={16} color={COLORS.heartRed} />
+              <Text style={styles.energyLabel}>에너지</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={styles.energyValue}>{energy} / 100</Text>
+            </View>
+            <View style={styles.energyBarBg}>
+              <View style={[styles.energyBarFill, { width: `${energy}%` as `${number}%` }]} />
+            </View>
+            <View style={styles.energyDivider} />
+            <View style={styles.sweatRow}>
+              <Text style={styles.sweatEmoji}>💧</Text>
+              <Text style={styles.sweatLabel}>땀방울</Text>
+              <View style={{ flex: 1 }} />
+              <Text style={styles.sweatValue}>{sweatPoints.toLocaleString()}</Text>
+              <Text style={styles.sweatUnit}>포인트</Text>
+            </View>
+          </View>
+
+          {/* ── 내 친구 (1명) ──────────────────────── */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.sectionTitle}>내 친구</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('FriendSelect')}>
+              <Text style={styles.sectionLink}>변경하기 ›</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={[styles.friendCard, { backgroundColor: selectedFriend.bg }]}
+            onPress={() => navigation.navigate('FriendSelect')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.friendEmoji}>{selectedFriend.emoji}</Text>
+            <View style={styles.friendInfo}>
+              <Text style={styles.friendName}>{selectedFriend.name}</Text>
+              <Text style={styles.friendDesc}>{selectedFriend.description}</Text>
+              <Text style={styles.friendPersonality}>{selectedFriend.personality}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+          </TouchableOpacity>
+
+          {/* ── Menu Grid ──────────────────────────── */}
+          <View style={styles.menuRow}>
+            {MENU_ROW1.map(item => (
+              <TouchableOpacity
+                key={item.label}
+                style={styles.menuItem}
+                onPress={() => navigation.navigate(item.screen)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: item.bg }]}>
+                  <Text style={styles.menuEmoji}>{item.emoji}</Text>
+                </View>
+                <Text style={styles.menuLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={[styles.menuRow, styles.menuRow2]}>
+            {MENU_ROW2.map(item => (
+              <TouchableOpacity
+                key={item.label}
+                style={styles.menuItem}
+                onPress={() => item.screen && navigation.navigate(item.screen)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.menuIconBox, { backgroundColor: item.bg }]}>
+                  <Text style={styles.menuEmoji}>{item.emoji}</Text>
+                </View>
+                <Text style={styles.menuLabel}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* ── 이름 변경 모달 ──────────────────────── */}
+        {showNameModal && (
+          <View style={styles.overlay}>
+            <View style={styles.modalCard}>
+              <TouchableOpacity style={styles.closeBtn} onPress={closeNameModal} activeOpacity={0.7}>
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+              </TouchableOpacity>
+              <Text style={styles.modalEmoji}>✏️</Text>
+              <Text style={styles.modalTitle}>이름 변경</Text>
+
+              {isNameLocked && (
+                <View style={styles.lockBanner}>
+                  <Ionicons name="lock-closed" size={13} color="#B45309" />
+                  <Text style={styles.lockBannerText}>
+                    {nameDaysLeft > 1
+                      ? `변경 후 ${nameDaysLeft}일 동안 바꿀 수 없어요`
+                      : `오늘 안에 변경 가능해요 (약 ${nameHoursLeft}시간 남음)`}
+                  </Text>
+                </View>
+              )}
+
+              {nameAdminUnlocked && (
+                <View style={[styles.lockBanner, { backgroundColor: '#EFF8E8', borderColor: '#D4EDCA' }]}>
+                  <Ionicons name="shield-checkmark" size={13} color={COLORS.green} />
+                  <Text style={[styles.lockBannerText, { color: COLORS.green }]}>
+                    관리자 모드 — 잠금 해제됨
+                  </Text>
+                </View>
+              )}
+
+              <Text style={styles.modalBody}>
+                {isNameLocked
+                  ? '지금은 이름을 바꿀 수 없어요.\n관리자 버튼으로 잠금 해제하세요.'
+                  : '최대 10글자, 변경 후 7일간 재변경 불가예요.'}
+              </Text>
+
+              {!isNameLocked && (
+                <TextInput
+                  style={styles.nameInput}
+                  value={nameInput}
+                  onChangeText={t => setNameInput(t.slice(0, 10))}
+                  placeholder="새 이름 입력"
+                  placeholderTextColor={COLORS.textMuted}
+                  maxLength={10}
+                  returnKeyType="done"
+                  autoFocus
+                />
+              )}
+
+              {!isNameLocked && (
+                <Text style={styles.charCount}>{nameInput.length} / 10</Text>
+              )}
+
+              {!isNameLocked && (
+                <TouchableOpacity
+                  style={[styles.confirmBtn, { width: '100%', marginTop: 8 }, !nameInput.trim() && { opacity: 0.4 }]}
+                  onPress={handleSaveName}
+                  disabled={!nameInput.trim()}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.confirmBtnText}>저장하기</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.adminBtn}
+                onPress={() => setShowNameAdminModal(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="shield-outline" size={13} color={COLORS.textMuted} />
+                <Text style={styles.adminBtnText}>관리자 잠금 해제</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── 관리자 PIN 모달 (이름 변경용) ────────── */}
+        {showNameAdminModal && (
+          <View style={styles.overlay}>
+            <View style={styles.modalCard}>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => { setShowNameAdminModal(false); setNameAdminPin(''); setNameAdminError(''); }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+              </TouchableOpacity>
+              <Text style={styles.modalEmoji}>🔒</Text>
+              <Text style={styles.modalTitle}>관리자 확인</Text>
+              <Text style={styles.modalBody}>PIN을 입력하면 잠금이 해제돼요.</Text>
+              <TextInput
+                style={styles.pinInput}
+                value={nameAdminPin}
+                onChangeText={setNameAdminPin}
+                placeholder="● ● ● ●"
+                placeholderTextColor={COLORS.textMuted}
+                secureTextEntry
+                keyboardType="numeric"
+                maxLength={8}
+                returnKeyType="done"
+                onSubmitEditing={handleNameAdminPin}
+                autoFocus
+              />
+              {nameAdminError ? <Text style={styles.pinError}>{nameAdminError}</Text> : null}
+              <TouchableOpacity style={[styles.confirmBtn, { width: '100%', marginTop: 12 }]} onPress={handleNameAdminPin} activeOpacity={0.8}>
+                <Text style={styles.confirmBtnText}>확인</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── 에너지 100 팡파레 모달 ─────────────── */}
+        {showCelebration && (
+          <View style={styles.celebOverlay}>
+            <Text style={[styles.celebParticle, { top: '10%', left: '8%'  }]}>✨</Text>
+            <Text style={[styles.celebParticle, { top: '15%', right: '10%'}]}>🌟</Text>
+            <Text style={[styles.celebParticle, { top: '30%', left: '4%'  }]}>⭐</Text>
+            <Text style={[styles.celebParticle, { top: '25%', right: '6%' }]}>✨</Text>
+            <Text style={[styles.celebParticle, { bottom: '22%', left: '10%' }]}>🎉</Text>
+            <Text style={[styles.celebParticle, { bottom: '18%', right: '8%'  }]}>🎊</Text>
+
+            <Animated.View style={[styles.celebCard, { transform: [{ scale: celebScale }], opacity: celebOpacity }]}>
+              <TouchableOpacity style={styles.closeBtn} onPress={closeCelebration} activeOpacity={0.7}>
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+              </TouchableOpacity>
+              <Text style={styles.celebChar}>{selectedFriend.emoji}</Text>
+              <Text style={styles.celebTitle}>에너지 100% 달성! ✨</Text>
+              <Text style={styles.celebMsg}>
+                {FANFARE_MESSAGES[selectedId] ?? '오늘 하루 정말 잘 해냈어요! 🎉'}
+              </Text>
+              <View style={styles.celebBadge}>
+                <Text style={styles.celebBadgeText}>⭐ 오늘의 도장 찍기 완료!</Text>
+              </View>
+              <TouchableOpacity style={[styles.confirmBtn, { width: '100%', marginTop: 8 }]} onPress={closeCelebration} activeOpacity={0.85}>
+                <Text style={styles.confirmBtnText}>고마워! 💪</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        )}
+
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  outerWrap: {
+    flex: 1,
+    backgroundColor: isWeb ? COLORS.yellow : COLORS.bg,
+    alignItems: isWeb ? 'center' : 'stretch',
+  },
+  safe: {
+    flex: 1,
+    backgroundColor: COLORS.bg,
+    width: isWeb ? 390 : '100%',
+  },
+  scroll: { paddingBottom: 36 },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  logo: { fontSize: 19, fontWeight: '800', color: COLORS.green, letterSpacing: 1.5 },
+  bellBtn: {
+    width: 36, height: 36, borderRadius: 9999,
+    backgroundColor: COLORS.card,
+    justifyContent: 'center', alignItems: 'center', ...SHADOW,
+  },
+
+  topCards: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 12 },
+  greetCard: { flex: 1, backgroundColor: COLORS.card, borderRadius: 20, padding: 16, ...SHADOW },
+  greetIconCircle: {
+    width: 36, height: 36, borderRadius: 9999,
+    backgroundColor: COLORS.greenLight,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 10,
+  },
+  greetText: { fontSize: 15, fontWeight: '700', color: COLORS.text, lineHeight: 22, marginBottom: 4 },
+  greetSub: { fontSize: 11, color: COLORS.textMuted },
+  weatherCard: { flex: 1, backgroundColor: COLORS.card, borderRadius: 20, padding: 16, alignItems: 'center', ...SHADOW },
+  weatherCardTitle: { fontSize: 10, fontWeight: '600', color: COLORS.textMuted, marginBottom: 6, letterSpacing: 0.5 },
+  weatherCardEmoji: { fontSize: 32 },
+  weatherCardName: { fontSize: 16, fontWeight: '800', color: COLORS.text, marginTop: 4 },
+  weatherCardSub: { fontSize: 10, color: COLORS.textMuted, marginTop: 3, textAlign: 'center' },
+
+  heroWrap: { marginHorizontal: 16, borderRadius: 22, overflow: 'hidden', height: 190, marginBottom: 0 },
+  heroSky: { flex: 1, backgroundColor: '#C6E8F5', justifyContent: 'flex-start', paddingTop: 12, paddingHorizontal: 16 },
+  cloudL: { position: 'absolute', top: 14, left: 14, fontSize: 22 },
+  cloudR: { position: 'absolute', top: 10, right: 28, fontSize: 16 },
+  heroCharWrap: {
+    position: 'absolute', bottom: 52, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end',
+  },
+  heroChar:      { fontSize: 86, lineHeight: 92 },
+  heroAccessory: { fontSize: 40, lineHeight: 48, marginBottom: 4, marginLeft: -8 },
+  heroGrass: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: 56, backgroundColor: '#72BE52',
+    borderTopLeftRadius: 40, borderTopRightRadius: 40,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, paddingBottom: 4,
+  },
+  flower: { fontSize: 18 },
+
+  nameRow: {
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    gap: 5, paddingVertical: 10, marginBottom: 2,
+  },
+  charName: { fontSize: 15, fontWeight: '700', color: COLORS.text, letterSpacing: 0.5 },
+
+  energyCard: { marginHorizontal: 16, backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 14, ...SHADOW },
+  energyLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  energyLabel:  { fontSize: 13, fontWeight: '700', color: COLORS.text },
+  energyValue:  { fontSize: 12, color: COLORS.textMuted },
+  energyBarBg: { height: 13, backgroundColor: '#F5E8E6', borderRadius: 9999, overflow: 'hidden' },
+  energyBarFill: { height: '100%', backgroundColor: COLORS.heartRed, borderRadius: 9999 },
+  energyDivider: { height: 1, backgroundColor: COLORS.border, marginVertical: 12 },
+  sweatRow:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sweatEmoji: { fontSize: 16 },
+  sweatLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text },
+  sweatValue: { fontSize: 16, fontWeight: '800', color: COLORS.sweat },
+  sweatUnit:  { fontSize: 11, color: COLORS.textMuted, paddingBottom: 1 },
+
+  sectionRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, marginBottom: 10,
+  },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: COLORS.text },
+  sectionLink:  { fontSize: 12, color: COLORS.green, fontWeight: '600' },
+
+  friendCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    marginHorizontal: 16, borderRadius: 20, padding: 16, marginBottom: 14, ...SHADOW,
+  },
+  friendEmoji: { fontSize: 44 },
+  friendInfo:  { flex: 1 },
+  friendName:        { fontSize: 14, fontWeight: '800', color: COLORS.text, letterSpacing: 0.3, marginBottom: 3 },
+  friendDesc:        { fontSize: 11, color: COLORS.textMuted, lineHeight: 16 },
+  friendPersonality: { fontSize: 11, color: COLORS.green, fontWeight: '600', marginTop: 2 },
+
+  menuRow:  { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 10 },
+  menuRow2: { justifyContent: 'center', maxWidth: 360 },
+  menuItem: { flex: 1, backgroundColor: COLORS.card, borderRadius: 20, paddingVertical: 18, alignItems: 'center', gap: 8, ...SHADOW },
+  menuIconBox: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  menuEmoji: { fontSize: 24 },
+  menuLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text },
+
+  celebOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 24, zIndex: 999,
+  },
+  celebParticle: { position: 'absolute', fontSize: 28, zIndex: 998 },
+  celebCard: {
+    width: '100%', backgroundColor: COLORS.card,
+    borderRadius: 28, padding: 28, alignItems: 'center', gap: 10, ...SHADOW, zIndex: 1000,
+  },
+  celebChar:  { fontSize: 72, lineHeight: 80 },
+  celebTitle: { fontSize: 22, fontWeight: '800', color: COLORS.text },
+  celebMsg:   { fontSize: 14, color: COLORS.textMuted, textAlign: 'center', lineHeight: 21 },
+  celebBadge: {
+    backgroundColor: '#FFF9E6', borderRadius: 9999,
+    paddingHorizontal: 16, paddingVertical: 8,
+    borderWidth: 1.5, borderColor: '#FFD93D',
+  },
+  celebBadgeText: { fontSize: 13, fontWeight: '700', color: '#B8860B' },
+
+  overlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 24, zIndex: 999,
+  },
+  modalCard: { width: '100%', backgroundColor: COLORS.card, borderRadius: 24, padding: 28, alignItems: 'center', gap: 8, ...SHADOW },
+  modalEmoji: { fontSize: 48, marginBottom: 2 },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
+  modalBody:  { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+
+  lockBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FCD34D',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, width: '100%',
+  },
+  lockBannerText: { fontSize: 11, color: '#B45309', fontWeight: '600', flex: 1 },
+
+  nameInput: {
+    width: '100%', backgroundColor: COLORS.bg, borderRadius: 14,
+    padding: 14, fontSize: 16, textAlign: 'center',
+    color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, marginTop: 2,
+  },
+  charCount: { fontSize: 11, color: COLORS.textMuted, alignSelf: 'flex-end', marginTop: -2 },
+
+  closeBtn: {
+    position: 'absolute', top: 12, right: 12,
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: COLORS.border,
+    justifyContent: 'center', alignItems: 'center', zIndex: 1,
+  },
+  confirmBtn: {
+    flex: 1, backgroundColor: COLORS.green, borderRadius: 9999,
+    paddingVertical: 14, alignItems: 'center',
+    shadowColor: COLORS.green, shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+  },
+  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
+
+  adminBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: COLORS.bg, borderRadius: 9999,
+    paddingHorizontal: 16, paddingVertical: 8, marginTop: 2,
+  },
+  adminBtnText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
+
+  pinInput: {
+    width: '100%', backgroundColor: COLORS.bg, borderRadius: 14,
+    padding: 14, fontSize: 18, textAlign: 'center', letterSpacing: 8,
+    color: COLORS.text, borderWidth: 1, borderColor: COLORS.border, marginTop: 4,
+  },
+  pinError: { fontSize: 12, color: COLORS.heartRed, marginTop: 2 },
+});

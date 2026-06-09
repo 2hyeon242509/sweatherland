@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s http://localhost:8081)",
+      "Bash(npx expo *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(python3 -c ' *)",
+      "Bash(del \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\original_content.txt\" \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\moodlog_original.txt\" \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\moodlog_v2.txt\" \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\moodlog_v3.txt\" \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\mission_original.txt\" \"C:\\\\Users\\\\박이현\\\\sweatherland\\\\calendar_original.txt\")",
+      "Bash(Select-String -NotMatch \"node_modules\")",
+      "PowerShell(Get-ChildItem C:\\\\Users\\\\박이현\\\\sweatherland | Where-Object { $_.Name -ne \"node_modules\" } | Select-Object Name, Attributes)",
+      "Bash(npx tsc *)",
+      "Bash(Expand-Archive -Path \"C:\\\\Users\\\\박이현\\\\Downloads\\\\GmarketSansTTF.zip\" -DestinationPath \"C:\\\\Users\\\\박이현\\\\Downloads\\\\GmarketSansTTF\" -Force)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\박이현\\\\Downloads\\\\GmarketSansTTF\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "Bash(cd /mnt/c/Users/박이현/sweatherland && cat package.json | grep expo-font)",
+      "PowerShell(gh --version 2>&1)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\",\"User\"\\); gh --version)"
+    ]
+  }
+}
