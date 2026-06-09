@@ -84,25 +84,14 @@ function HomeTabs() {
 }
 
 export default function App() {
-  // useFonts → Metro 번들러가 TTF 파일을 빌드에 포함, web에서 @font-face 자동 등록
+  // useFonts → 파일을 빌드에 포함시키기 위해 유지 (web/index.html에서 @font-face로 직접 로드)
   useFonts({
     'GmarketSans-Light':  require('./assets/fonts/GmarketSansTTFLight.ttf'),
     'GmarketSans-Medium': require('./assets/fonts/GmarketSansTTFMedium.ttf'),
     'GmarketSans-Bold':   require('./assets/fonts/GmarketSansTTFBold.ttf'),
   });
 
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const style = document.createElement('style');
-    // !important 없이 적용 → Ionicons inline style이 우선순위 유지
-    style.textContent = `
-      body { font-family: 'GmarketSans-Light', -apple-system, sans-serif; }
-      [class*="css-text-"] {
-        font-family: 'GmarketSans-Light', -apple-system, sans-serif;
-      }
-    `;
-    document.head.appendChild(style);
-  }, []);
+  useEffect(() => {}, []);
 
   return (
     <GameProvider>

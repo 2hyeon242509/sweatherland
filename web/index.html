@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>S.Weather Land</title>
+
+    <!-- G마켓 산스 폰트 -->
+    <style id="gmarket-font">
+      @font-face {
+        font-family: 'GmarketSans-Light';
+        src: url('/assets/assets/fonts/GmarketSansTTFLight.12bd3606ebae38deac6acbad730e4291.ttf') format('truetype');
+        font-weight: 300;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'GmarketSans-Medium';
+        src: url('/assets/assets/fonts/GmarketSansTTFMedium.96b4a5b8dfa689a32dd322793d660298.ttf') format('truetype');
+        font-weight: 500;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'GmarketSans-Bold';
+        src: url('/assets/assets/fonts/GmarketSansTTFBold.7cf85dc71a5acc06eb84b647fcab6103.ttf') format('truetype');
+        font-weight: 700;
+        font-display: swap;
+      }
+      /* 앱 전체 텍스트에 적용 */
+      html, body {
+        font-family: 'GmarketSans-Light', -apple-system, BlinkMacSystemFont, sans-serif;
+        height: 100%;
+      }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+      /* React Native web 텍스트 요소에 적용 (Ionicons 제외) */
+      [class*="css-text-"] {
+        font-family: 'GmarketSans-Light', -apple-system, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
