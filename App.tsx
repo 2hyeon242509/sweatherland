@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { GameProvider } from './src/store/GameContext';
 import HomeScreen from './src/screens/HomeScreen';
 import MoodLogScreen from './src/screens/MoodLogScreen';
@@ -83,28 +84,21 @@ function HomeTabs() {
 }
 
 export default function App() {
+  // useFonts → Metro 번들러가 TTF 파일을 빌드에 포함, web에서 @font-face 자동 등록
+  useFonts({
+    'GmarketSans-Light':  require('./assets/fonts/GmarketSansTTFLight.ttf'),
+    'GmarketSans-Medium': require('./assets/fonts/GmarketSansTTFMedium.ttf'),
+    'GmarketSans-Bold':   require('./assets/fonts/GmarketSansTTFBold.ttf'),
+  });
+
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const style = document.createElement('style');
+    // !important 없이 적용 → Ionicons inline style이 우선순위 유지
     style.textContent = `
-      @font-face {
-        font-family: 'GmarketSans';
-        font-weight: 300;
-        src: url('/assets/fonts/GmarketSansTTFLight.ttf') format('truetype');
-      }
-      @font-face {
-        font-family: 'GmarketSans';
-        font-weight: 500;
-        src: url('/assets/fonts/GmarketSansTTFMedium.ttf') format('truetype');
-      }
-      @font-face {
-        font-family: 'GmarketSans';
-        font-weight: 700;
-        src: url('/assets/fonts/GmarketSansTTFBold.ttf') format('truetype');
-      }
-      body { font-family: 'GmarketSans', -apple-system, BlinkMacSystemFont, sans-serif; }
+      body { font-family: 'GmarketSans-Light', -apple-system, sans-serif; }
       [class*="css-text-"] {
-        font-family: 'GmarketSans', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'GmarketSans-Light', -apple-system, sans-serif;
       }
     `;
     document.head.appendChild(style);
