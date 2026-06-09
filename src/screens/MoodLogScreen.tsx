@@ -65,6 +65,7 @@ export default function MoodLogScreen() {
         mood_id:    selected,
         mood_label: moodInfo.label,
         memo:       memo.trim(),
+        logged_at:  new Date().toISOString(), // 항상 기록 시각 포함
       };
       if (isSupabaseConfigured()) {
         saveMoodLog(logData).catch(() => {});

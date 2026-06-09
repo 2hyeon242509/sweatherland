@@ -9,13 +9,13 @@ const STORAGE_KEY = '@sweatherland_mood_logs';
 
 /** 기록 1건 추가 */
 export async function saveLocalLog(
-  log: Omit<MoodLog, 'id' | 'logged_at'>,
+  log: Omit<MoodLog, 'id'>,
 ): Promise<void> {
   const existing = await loadLocalLogs();
   const newEntry: MoodLog = {
     ...log,
-    id: Date.now().toString(),
-    logged_at: new Date().toISOString(),
+    id:        Date.now().toString(),
+    logged_at: log.logged_at ?? new Date().toISOString(), // 넘겨받은 시각 우선, 없으면 현재 시각
   };
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([newEntry, ...existing]));
 }

@@ -8,10 +8,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../constants';
 import SweatOutLogo from '../components/SweatOutLogo';
 import JejuLogo from '../components/JejuLogo';
+import { Session } from '../lib/session';
 import { UserProfile } from '../types/auth';
 
 const isWeb = Platform.OS === 'web';
-const NUM  = 72;
+const NUM   = 72;
 
 interface Props {
   onLogin:    (profile: UserProfile) => void;
@@ -19,15 +20,23 @@ interface Props {
 }
 
 export default function LoginScreen({ onLogin, onRegister }: Props) {
-  const [username, setUsername]   = useState('');
-  const [pin, setPin]             = useState('');
-  const [error, setError]         = useState('');
-  const [busy, setBusy]           = useState(false);
-  const submitted                 = useRef(false);
+  const [username,        setUsername]        = useState('');
+  const [pin,             setPin]             = useState('');
+  const [error,           setError]           = useState('');
+  const [busy,            setBusy]            = useState(false);
+  const [rememberUser,    setRememberUser]     = useState(false);
+  const submitted = useRef(false);
 
-  /* 마지막으로 쓴 아이디 자동완성 */
+  /* 앱 시작: 기억하기 설정 + 마지막 아이디 불러오기 */
   useEffect(() => {
-    AsyncStorage.getItem('@last_username').then(v => { if (v) setUsername(v); });
+    (async () => {
+      const remember = await AsyncStorage.getItem('@remember_username');
+      if (remember === 'true') {
+        setRememberUser(true);
+        const saved = await AsyncStorage.getItem('@last_username');
+        if (saved) setUsername(saved);
+      }
+    })();
   }, []);
 
   /* PIN 4자리 채워지면 자동 제출 */
@@ -41,8 +50,7 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
   async function doLogin(currentPin: string) {
     if (!username.trim()) {
       setError('아이디를 먼저 입력해주세요');
-      setPin('');
-      submitted.current = false;
+      resetPin();
       return;
     }
     setBusy(true);
@@ -63,8 +71,17 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
         return;
       }
 
-      await AsyncStorage.setItem('@last_username', user.username);
-      await AsyncStorage.setItem('@active_user',   user.username);
+      /* 아이디 기억하기 처리 */
+      if (rememberUser) {
+        await AsyncStorage.setItem('@remember_username', 'true');
+        await AsyncStorage.setItem('@last_username', user.username);
+      } else {
+        await AsyncStorage.setItem('@remember_username', 'false');
+        await AsyncStorage.removeItem('@last_username');
+      }
+
+      /* 세션 저장 (sessionStorage on web → 창 닫으면 사라짐) */
+      await Session.setItem('@active_user', user.username);
       onLogin(user);
     } catch {
       setError('오류가 발생했어요. 다시 시도해주세요.');
@@ -134,6 +151,18 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
               )}
             </View>
 
+            {/* 아이디 기억하기 */}
+            <TouchableOpacity
+              style={s.checkRow}
+              onPress={() => setRememberUser(v => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={[s.checkbox, rememberUser && s.checkboxOn]}>
+                {rememberUser && <Ionicons name="checkmark" size={12} color="#FFF" />}
+              </View>
+              <Text style={s.checkLabel}>아이디 기억하기</Text>
+            </TouchableOpacity>
+
             <View style={s.divider} />
 
             {/* PIN 표시 */}
@@ -145,7 +174,7 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
             </View>
           </View>
 
-          {/* ── 에러 메시지 ───────────────────────── */}
+          {/* ── 에러 ──────────────────────────────── */}
           <View style={s.errorWrap}>
             {error ? <Text style={s.errorText}>{error}</Text> : null}
           </View>
@@ -179,7 +208,7 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
             ))}
           </View>
 
-          {/* ── 가입하기 링크 ─────────────────────── */}
+          {/* ── 가입 링크 ─────────────────────────── */}
           <TouchableOpacity style={s.regLink} onPress={onRegister} activeOpacity={0.7}>
             <Text style={s.regLinkText}>
               처음이신가요?{' '}
@@ -213,99 +242,67 @@ const s = StyleSheet.create({
 
   /* 로고 */
   logoWrap: {
-    alignItems:    'center',
-    paddingTop:    44,
-    paddingBottom: 28,
-    gap:           6,
+    alignItems: 'center', paddingTop: 44, paddingBottom: 28, gap: 6,
   },
   logoSub: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 2.5 },
 
   /* 카드 */
   card: {
-    marginHorizontal: 24,
-    borderRadius:     20,
-    padding:          22,
-    borderWidth:      1,
-    borderColor:      COLORS.border,
-    backgroundColor:  COLORS.bg,
-    ...SHADOW,
-    marginBottom:     8,
+    marginHorizontal: 24, borderRadius: 20, padding: 22,
+    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.bg, ...SHADOW, marginBottom: 8,
   },
-  fieldLabel: {
-    fontSize:      11,
-    color:         COLORS.textMuted,
-    letterSpacing: 0.8,
-    marginBottom:  10,
-  },
+  fieldLabel: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 0.8, marginBottom: 10 },
   inputRow: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    borderBottomWidth: 1.5,
-    borderBottomColor: COLORS.navy,
-    paddingBottom:   8,
+    flexDirection: 'row', alignItems: 'center',
+    borderBottomWidth: 1.5, borderBottomColor: COLORS.navy, paddingBottom: 8,
   },
   textInput: {
-    flex:       1,
-    fontSize:   18,
-    color:      COLORS.text,
-    paddingVertical: 2,
-    fontFamily: 'GmarketSans-Light',
+    flex: 1, fontSize: 18, color: COLORS.text,
+    paddingVertical: 2, fontFamily: 'GmarketSans-Light',
   },
-  divider: {
-    height:          1,
-    backgroundColor: COLORS.border,
-    marginVertical:  18,
+
+  /* 아이디 기억하기 */
+  checkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: 12,
   },
+  checkbox: {
+    width: 18, height: 18, borderRadius: 4,
+    borderWidth: 1.5, borderColor: COLORS.border,
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: COLORS.bg,
+  },
+  checkboxOn: {
+    backgroundColor: COLORS.navy, borderColor: COLORS.navy,
+  },
+  checkLabel: { fontSize: 12, color: COLORS.textMuted },
+
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 18 },
+
   pinDots: {
-    flexDirection:  'row',
-    gap:            20,
-    justifyContent: 'center',
-    paddingVertical: 8,
+    flexDirection: 'row', gap: 20, justifyContent: 'center', paddingVertical: 8,
   },
   dot: {
-    width:           16,
-    height:          16,
-    borderRadius:    8,
-    borderWidth:     2,
-    borderColor:     COLORS.border,
-    backgroundColor: 'transparent',
+    width: 16, height: 16, borderRadius: 8,
+    borderWidth: 2, borderColor: COLORS.border, backgroundColor: 'transparent',
   },
-  dotFilled: {
-    backgroundColor: COLORS.navy,
-    borderColor:     COLORS.navy,
-  },
+  dotFilled: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
 
   /* 에러 */
   errorWrap: { height: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-  errorText: {
-    fontSize:   13,
-    color:      '#C0392B',
-    textAlign:  'center',
-    paddingHorizontal: 24,
-  },
+  errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center', paddingHorizontal: 24 },
 
   /* 키패드 */
-  numpad: {
-    alignSelf: 'center',
-    gap:       10,
-    marginBottom: 14,
-  },
-  numRow: {
-    flexDirection: 'row',
-    gap:           10,
-  },
+  numpad: { alignSelf: 'center', gap: 10, marginBottom: 14 },
+  numRow:  { flexDirection: 'row', gap: 10 },
   numKey: {
-    width:          NUM,
-    height:         NUM,
-    borderRadius:   NUM / 2,
-    backgroundColor: COLORS.navyLight,
-    justifyContent: 'center',
-    alignItems:     'center',
-    borderWidth:    1,
-    borderColor:    COLORS.border,
+    width: NUM, height: NUM, borderRadius: NUM / 2,
+    backgroundColor: COLORS.navyLight, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  numKeyOk:  { backgroundColor: COLORS.navy,   borderColor: COLORS.navy   },
-  numKeyDel: { backgroundColor: COLORS.bg,      borderColor: COLORS.border },
+  numKeyOk:  { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  numKeyDel: { backgroundColor: COLORS.bg,   borderColor: COLORS.border },
   numKeyText: { fontSize: 22, color: COLORS.text },
 
   /* 가입 링크 */
@@ -315,15 +312,9 @@ const s = StyleSheet.create({
 
   /* 제주대 */
   jejuRow: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'center',
-    gap:            6,
-    paddingTop:     14,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    marginHorizontal: 24,
-    marginTop:      6,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, paddingTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border,
+    marginHorizontal: 24, marginTop: 6,
   },
   jejuText: { fontSize: 11, color: COLORS.border },
 });
