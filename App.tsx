@@ -18,36 +18,18 @@ import AdminScreen from './src/screens/AdminScreen';
 import AdminPortalScreen from './src/screens/AdminPortalScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import FriendScreen from './src/screens/FriendScreen';
+import MyInfoScreen from './src/screens/MyInfoScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import { COLORS, SHADOW } from './src/constants';
+import { COLORS } from './src/constants';
 import { UserProfile } from './src/types/auth';
 import { Session } from './src/lib/session';
-
-// ── 내정보 탭 ─────────────────────────────────────────────────
-function MyInfoScreen() {
-  const { characterName, profileEmoji } = useGame();
-  return (
-    <View style={placeholder.container}>
-      <Text style={placeholder.avatarEmoji}>{profileEmoji || '🐱'}</Text>
-      <Text style={placeholder.name}>{characterName || '스웨더'}</Text>
-      <Text style={placeholder.sub}>프로필 기능 준비 중이에요.</Text>
-    </View>
-  );
-}
-
-const placeholder = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  avatarEmoji: { fontSize: 72 },
-  name:        { fontSize: 22, color: COLORS.text, fontFamily: 'GmarketSans-Light' },
-  sub:         { fontSize: 14, color: '#888', fontFamily: 'GmarketSans-Light' },
-});
 
 // ── Navigators ────────────────────────────────────────────────
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function HomeTabs() {
+function HomeTabs({ onLogout }: { onLogout: () => void }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -70,7 +52,9 @@ function HomeTabs() {
       <Tab.Screen name="홈"     component={HomeScreen} />
       <Tab.Screen name="달력"   component={CalendarScreen} />
       <Tab.Screen name="친구"   component={FriendScreen} />
-      <Tab.Screen name="내정보" component={MyInfoScreen} />
+      <Tab.Screen name="내정보">
+        {() => <MyInfoScreen onLogout={onLogout} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -83,12 +67,27 @@ function AppContent() {
   const { setCharacterName, setProfileEmoji } = useGame();
   const [auth, setAuth] = useState<AuthState>('loading');
 
-  /* 앱 시작: 세션 확인 (sessionStorage on web → 창 닫으면 자동 로그아웃) */
+  const handleLogout = () => setAuth('login');
+
+  /* 앱 시작: 세션 확인 → Supabase에서 프로필 복원 */
   useEffect(() => {
     (async () => {
       try {
         const activeUser = await Session.getItem('@active_user');
         if (activeUser) {
+          /* Supabase에서 먼저 조회 */
+          try {
+            const { supabase } = await import('./src/lib/supabase');
+            const { data } = await (supabase as any)
+              .from('user_profiles').select('username,emoji').eq('username', activeUser).maybeSingle();
+            if (data) {
+              setCharacterName(data.username);
+              setProfileEmoji(data.emoji || '🐱');
+              setAuth('app');
+              return;
+            }
+          } catch {}
+          /* 로컬 fallback */
           const raw = await AsyncStorage.getItem('@user_profiles');
           const list: UserProfile[] = raw ? JSON.parse(raw) : [];
           const profile = list.find(p => p.username === activeUser);
@@ -136,7 +135,9 @@ function AppContent() {
     <NavigationContainer>
       <StatusBar style="dark" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Main"     component={HomeTabs} />
+        <Stack.Screen name="Main">
+          {() => <HomeTabs onLogout={handleLogout} />}
+        </Stack.Screen>
         <Stack.Screen name="MoodLog"  component={MoodLogScreen}  options={{ presentation: 'modal' }} />
         <Stack.Screen name="Mission"  component={MissionScreen}  options={{ presentation: 'modal' }} />
         <Stack.Screen name="Running"  component={RunningScreen}  options={{ presentation: 'modal' }} />
