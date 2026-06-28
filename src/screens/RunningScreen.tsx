@@ -1,12 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, SafeAreaView, Platform, ActivityIndicator,
+  StyleSheet, SafeAreaView, Platform, ActivityIndicator, Modal,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGame } from '../store/GameContext';
 import { COLORS, SHADOW } from '../constants';
+
+const DAILY_LIMIT = 3;
+const OCR_STORAGE_KEY = '@ocr_daily';
+
+function getTodayKST(): string {
+  return new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+async function loadOcrUsage(): Promise<number> {
+  try {
+    const raw = await AsyncStorage.getItem(OCR_STORAGE_KEY);
+    if (!raw) return 0;
+    const { date, count } = JSON.parse(raw);
+    return date === getTodayKST() ? count : 0;
+  } catch { return 0; }
+}
+
+async function saveOcrUsage(count: number): Promise<void> {
+  await AsyncStorage.setItem(OCR_STORAGE_KEY, JSON.stringify({ date: getTodayKST(), count }));
+}
 
 const MOCK_HISTORY = [
   { date: '2024.05.21  12:10', from: 500, to: 50 },
@@ -41,10 +62,18 @@ export default function RunningScreen() {
   const [messageType, setMessageType] = useState<'success' | 'warn' | ''>('');
 
   /* ── OCR 상태 ─────────────────────────────── */
-  const [ocrLoading, setOcrLoading] = useState(false);
-  const [ocrResult,  setOcrResult]  = useState<FitnessResult | null>(null);
-  const [ocrError,   setOcrError]   = useState('');
-  const [ocrAdded,   setOcrAdded]   = useState(false);
+  const [ocrLoading,   setOcrLoading]   = useState(false);
+  const [ocrResult,    setOcrResult]    = useState<FitnessResult | null>(null);
+  const [ocrError,     setOcrError]     = useState('');
+  const [ocrAdded,     setOcrAdded]     = useState(false);
+  const [ocrUsed,      setOcrUsed]      = useState(0);
+  const [limitModal,   setLimitModal]   = useState(false);
+
+  const ocrRemaining = DAILY_LIMIT - ocrUsed;
+
+  useEffect(() => {
+    loadOcrUsage().then(setOcrUsed);
+  }, []);
 
   const canExchange = sweatPoints >= 100;
 
@@ -62,6 +91,7 @@ export default function RunningScreen() {
   /* ── 이미지 선택 & AI 분석 (웹 전용) ────────── */
   const handleImageUpload = () => {
     if (Platform.OS !== 'web') return;
+    if (ocrRemaining <= 0) { setLimitModal(true); return; }
 
     const input = document.createElement('input');
     input.type   = 'file';
@@ -99,6 +129,11 @@ export default function RunningScreen() {
         }
 
         const data: FitnessResult = await res.json();
+
+        /* 성공 시 횟수 차감 */
+        const newCount = ocrUsed + 1;
+        await saveOcrUsage(newCount);
+        setOcrUsed(newCount);
 
         if (data.steps == null && data.distance == null) {
           setOcrError('걸음수나 거리 정보를 찾지 못했어요. 다른 이미지를 올려보세요.');
@@ -155,12 +190,36 @@ export default function RunningScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* ── 한도 초과 모달 ──────────────────── */}
+          <Modal visible={limitModal} transparent animationType="fade" onRequestClose={() => setLimitModal(false)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <Text style={styles.modalEmoji}>⏰</Text>
+                <Text style={styles.modalTitle}>오늘 인증 횟수를{'\n'}모두 사용했어요</Text>
+                <Text style={styles.modalDesc}>
+                  AI 스크린샷 인증은 하루 {DAILY_LIMIT}회까지만 가능해요.{'\n'}
+                  내일 자정이 지나면 다시 사용할 수 있어요!
+                </Text>
+                <TouchableOpacity style={styles.modalBtn} onPress={() => setLimitModal(false)} activeOpacity={0.85}>
+                  <Text style={styles.modalBtnText}>확인</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
           {/* ── 📸 AI 스크린샷 인증 카드 ──────────── */}
           {isWeb && (
             <View style={styles.ocrCard}>
               <View style={styles.ocrHeader}>
                 <Text style={styles.ocrBadge}>AI 자동 인증</Text>
+                <View style={styles.ocrTitleRow}>
                 <Text style={styles.ocrTitle}>📸 스크린샷으로 마일리지 추가</Text>
+                <View style={[styles.ocrCountBadge, ocrRemaining === 0 && styles.ocrCountBadgeEmpty]}>
+                  <Text style={[styles.ocrCountText, ocrRemaining === 0 && styles.ocrCountTextEmpty]}>
+                    오늘 {ocrRemaining}/{DAILY_LIMIT}회 남음
+                  </Text>
+                </View>
+              </View>
                 <Text style={styles.ocrDesc}>
                   피트니스 앱 스크린샷을 올리면{'\n'}AI가 걸음수를 읽어 마일리지로 환산해요.
                 </Text>
@@ -191,9 +250,15 @@ export default function RunningScreen() {
 
               {/* 업로드 버튼 */}
               {!ocrLoading && !ocrResult && (
-                <TouchableOpacity style={styles.uploadBtn} onPress={handleImageUpload} activeOpacity={0.85}>
-                  <Ionicons name="image-outline" size={18} color={COLORS.navy} style={{ marginRight: 8 }} />
-                  <Text style={styles.uploadBtnText}>이미지 선택하기</Text>
+                <TouchableOpacity
+                  style={[styles.uploadBtn, ocrRemaining === 0 && styles.uploadBtnDisabled]}
+                  onPress={handleImageUpload}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="image-outline" size={18} color={ocrRemaining === 0 ? COLORS.textMuted : COLORS.navy} style={{ marginRight: 8 }} />
+                  <Text style={[styles.uploadBtnText, ocrRemaining === 0 && { color: COLORS.textMuted }]}>
+                    {ocrRemaining === 0 ? '오늘 인증 횟수를 모두 사용했어요' : '이미지 선택하기'}
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -421,6 +486,38 @@ const styles = StyleSheet.create({
   },
   ocrTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
   ocrDesc:  { fontSize: 12, color: COLORS.textMuted, lineHeight: 18 },
+
+  /* 제목 + 횟수 배지 */
+  ocrTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  ocrCountBadge: {
+    backgroundColor: COLORS.navyLight, borderRadius: 10,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1, borderColor: COLORS.navy,
+  },
+  ocrCountBadgeEmpty: { backgroundColor: '#FFF0F0', borderColor: '#FFAAAA' },
+  ocrCountText:      { fontSize: 11, fontWeight: '700', color: COLORS.navy },
+  ocrCountTextEmpty: { color: '#C0392B' },
+
+  /* 업로드 버튼 비활성화 */
+  uploadBtnDisabled: { borderColor: COLORS.border, backgroundColor: '#F8F8F8' },
+
+  /* 한도 초과 모달 */
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  modalCard: {
+    backgroundColor: '#FFF', borderRadius: 24, padding: 28,
+    alignItems: 'center', width: 300, gap: 10, ...SHADOW,
+  },
+  modalEmoji: { fontSize: 48, marginBottom: 4 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text, textAlign: 'center', lineHeight: 26 },
+  modalDesc:  { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', lineHeight: 20 },
+  modalBtn: {
+    marginTop: 8, backgroundColor: COLORS.navy, borderRadius: 14,
+    paddingVertical: 13, paddingHorizontal: 40,
+  },
+  modalBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
 
   /* 변환 안내 */
   ocrRateRow: {
