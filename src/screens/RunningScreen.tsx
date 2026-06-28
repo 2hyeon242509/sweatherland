@@ -95,7 +95,7 @@ export default function RunningScreen() {
 
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.error ?? '서버 오류');
+          throw new Error(err.detail ? `${err.error}: ${err.detail}` : (err.error ?? '서버 오류'));
         }
 
         const data: FitnessResult = await res.json();
