@@ -23,13 +23,6 @@ async function searchLocalMock(uniqueId: string): Promise<UserProfile | null> {
 
 const isWeb = Platform.OS === 'web';
 
-const PROFILE_EMOJIS = [
-  '🐱','🐶','🐰','🐻','🐼','🦊',
-  '🐯','🦁','🐸','🐧','🦋','🐬',
-  '🌸','⭐','🌈','🌙','☀️','🌊',
-  '🍀','🌺','🎀','💫','🦄','🍭',
-];
-
 // ── 프로필 카드 컴포넌트 ──────────────────────────────────────
 interface ProfileCardProps {
   profileEmoji: string;
@@ -75,7 +68,7 @@ function ProfileCard({
 export default function FriendScreen() {
   const {
     characterName, uniqueId, statusMsg, profileEmoji,
-    friendList, setStatusMsg, setProfileEmoji, addFriend, removeFriend,
+    friendList, addFriend, removeFriend,
   } = useGame();
 
   const [searchInput,  setSearchInput]  = useState('');
@@ -83,10 +76,6 @@ export default function FriendScreen() {
     'idle' | 'loading' | 'found' | 'not_found' | 'no_backend' | 'already'
   >('idle');
   const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
-
-  const [showEmojiPicker,  setShowEmojiPicker]  = useState(false);
-  const [showStatusModal,  setShowStatusModal]  = useState(false);
-  const [statusInput,      setStatusInput]      = useState('');
 
   const [deleteConfirmId,   setDeleteConfirmId]   = useState<string | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
@@ -181,16 +170,6 @@ export default function FriendScreen() {
     setDeleteConfirmName('');
   };
 
-  const openStatusModal = () => {
-    setStatusInput(statusMsg);
-    setShowStatusModal(true);
-  };
-
-  const saveStatus = () => {
-    setStatusMsg(statusInput.trim());
-    setShowStatusModal(false);
-  };
-
   return (
     <View style={styles.outerWrap}>
       <SafeAreaView style={styles.safe}>
@@ -202,28 +181,6 @@ export default function FriendScreen() {
           {/* ── 헤더 ───────────────────────── */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>친구</Text>
-          </View>
-
-          {/* ── 내 프로필 ──────────────────── */}
-          <Text style={styles.sectionLabel}>내 프로필</Text>
-          <ProfileCard
-            profileEmoji={profileEmoji}
-            nickname={characterName}
-            uniqueId={uniqueId || '...'}
-            statusMsg={statusMsg}
-            onEdit={openStatusModal}
-            isMe
-          />
-
-          <View style={styles.myProfileActions}>
-            <TouchableOpacity style={styles.actionChip} onPress={() => setShowEmojiPicker(true)} activeOpacity={0.8}>
-              <Text style={styles.actionChipEmoji}>🎨</Text>
-              <Text style={styles.actionChipLabel}>프로필 사진 변경</Text>
-            </TouchableOpacity>
-            <View style={styles.codeChip}>
-              <Ionicons name="key-outline" size={14} color={COLORS.navy} />
-              <Text style={styles.codeChipText}>내 코드: <Text style={styles.codeChipId}>{uniqueId || '...'}</Text></Text>
-            </View>
           </View>
 
           {/* ── 친구 검색 ──────────────────── */}
@@ -355,63 +312,6 @@ export default function FriendScreen() {
             </View>
           </View>
         )}
-
-        {/* ── 이모지 픽커 모달 ───────────────── */}
-        {showEmojiPicker && (
-          <View style={styles.overlay}>
-            <View style={styles.modalCard}>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowEmojiPicker(false)} activeOpacity={0.7}>
-                <Ionicons name="close" size={18} color={COLORS.textMuted} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>프로필 사진 선택</Text>
-              <Text style={styles.modalSub}>나를 표현할 이모지를 골라봐요</Text>
-              <View style={styles.emojiGrid}>
-                {PROFILE_EMOJIS.map(emoji => (
-                  <TouchableOpacity
-                    key={emoji}
-                    style={[styles.emojiCell, profileEmoji === emoji && styles.emojiCellSelected]}
-                    onPress={() => { setProfileEmoji(emoji); setShowEmojiPicker(false); }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.emojiCellText}>{emoji}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* ── 상태메시지 편집 모달 ──────────── */}
-        {showStatusModal && (
-          <View style={styles.overlay}>
-            <View style={styles.modalCard}>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowStatusModal(false)} activeOpacity={0.7}>
-                <Ionicons name="close" size={18} color={COLORS.textMuted} />
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>상태메시지</Text>
-              <Text style={styles.modalSub}>지금 내 기분이나 한마디를 적어봐요</Text>
-              <TextInput
-                style={styles.statusInput}
-                value={statusInput}
-                onChangeText={t => setStatusInput(t.slice(0, 30))}
-                placeholder="최대 30자"
-                placeholderTextColor={COLORS.textMuted}
-                maxLength={30}
-                returnKeyType="done"
-                onSubmitEditing={saveStatus}
-                autoFocus
-              />
-              <Text style={styles.charCount}>{statusInput.length} / 30</Text>
-              <TouchableOpacity
-                style={[styles.confirmBtn, !statusInput.trim() && { opacity: 0.5 }]}
-                onPress={saveStatus}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.confirmBtnText}>저장하기</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
       </SafeAreaView>
     </View>
   );
@@ -465,26 +365,6 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: COLORS.navyLight, justifyContent: 'center', alignItems: 'center',
   },
-
-  myProfileActions: {
-    flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginTop: 10, alignItems: 'center',
-  },
-  actionChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: COLORS.card, borderRadius: 9999,
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOW,
-  },
-  actionChipEmoji: { fontSize: 14 },
-  actionChipLabel: { fontSize: 12, fontWeight: '700', color: COLORS.text },
-  codeChip: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: COLORS.navyLight, borderRadius: 9999,
-    paddingHorizontal: 12, paddingVertical: 8,
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  codeChipText: { fontSize: 12, color: COLORS.textMuted, fontWeight: '700' },
-  codeChipId: { fontWeight: '800', color: COLORS.navy },
 
   searchRow: {
     flexDirection: 'row', gap: 8, paddingHorizontal: 16, alignItems: 'center',
@@ -551,36 +431,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.navyLight,
     justifyContent: 'center', alignItems: 'center', zIndex: 1,
   },
-
-  emojiGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    justifyContent: 'center', gap: 8, marginTop: 4,
-  },
-  emojiCell: {
-    width: 48, height: 48, borderRadius: 12,
-    backgroundColor: COLORS.bg,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5, borderColor: 'transparent',
-  },
-  emojiCellSelected: {
-    borderColor: COLORS.navy,
-    backgroundColor: COLORS.navyLight,
-  },
-  emojiCellText: { fontSize: 26 },
-
-  statusInput: {
-    width: '100%', backgroundColor: COLORS.bg, borderRadius: 14,
-    padding: 14, fontSize: 15, color: COLORS.text,
-    borderWidth: 1, borderColor: COLORS.border, marginTop: 4,
-  },
-  charCount: { fontSize: 11, color: COLORS.textMuted, alignSelf: 'flex-end', marginTop: -4 },
-  confirmBtn: {
-    width: '100%', backgroundColor: COLORS.navy, borderRadius: 9999,
-    paddingVertical: 14, alignItems: 'center',
-    shadowColor: COLORS.navyDark, shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
-  },
-  confirmBtnText: { fontSize: 15, fontWeight: '700', color: '#FFF' },
 
   deleteModalBtns: { flexDirection: 'row', gap: 10, width: '100%', marginTop: 4 },
   deleteCancelBtn: {
