@@ -78,6 +78,7 @@ export default function RunningScreen() {
 
       try {
         /* 이미지 → base64 */
+        const mimeType = file.type || 'image/jpeg';
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload  = (ev: any) => resolve(ev.target.result.split(',')[1]);
@@ -89,7 +90,7 @@ export default function RunningScreen() {
         const res = await fetch('/api/extract-fitness', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ imageBase64: base64 }),
+          body:    JSON.stringify({ imageBase64: base64, mimeType }),
         });
 
         if (!res.ok) {

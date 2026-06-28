@@ -11,8 +11,9 @@ export default async function handler(req: any, res: any) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed' });
 
-  const { imageBase64 } = req.body ?? {};
+  const { imageBase64, mimeType } = req.body ?? {};
   if (!imageBase64) return res.status(400).json({ error: '이미지가 없어요.' });
+  const imageMime = mimeType || 'image/jpeg';
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY 환경변수가 설정되지 않았어요.' });
@@ -40,7 +41,7 @@ export default async function handler(req: any, res: any) {
               },
               {
                 inlineData: {
-                  mimeType: 'image/jpeg',
+                  mimeType: imageMime,
                   data: imageBase64,
                 }
               }
