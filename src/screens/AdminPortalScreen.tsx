@@ -68,10 +68,13 @@ export default function AdminPortalScreen() {
     if (pin !== ADMIN_PIN) { setError('PIN이 올바르지 않아요'); setPin(''); return; }
     setLoading(true);
     try {
-      const rawMembers = await AsyncStorage.getItem('@user_profiles');
-      setMembers(rawMembers ? JSON.parse(rawMembers) : []);
-      const rawLogs = await loadLocalLogs();
-      setLogs(rawLogs);
+      const { fetchAllUserProfiles } = await import('../lib/supabase');
+      const [fetchedMembers, fetchedLogs] = await Promise.all([
+        fetchAllUserProfiles(),
+        loadLocalLogs(),
+      ]);
+      setMembers(fetchedMembers);
+      setLogs(fetchedLogs);
       setAuthed(true);
     } catch (e: any) {
       setError('데이터 불러오기 오류: ' + e.message);
@@ -83,10 +86,13 @@ export default function AdminPortalScreen() {
   async function handleRefresh() {
     setLoading(true);
     try {
-      const rawMembers = await AsyncStorage.getItem('@user_profiles');
-      setMembers(rawMembers ? JSON.parse(rawMembers) : []);
-      const rawLogs = await loadLocalLogs();
-      setLogs(rawLogs);
+      const { fetchAllUserProfiles } = await import('../lib/supabase');
+      const [fetchedMembers, fetchedLogs] = await Promise.all([
+        fetchAllUserProfiles(),
+        loadLocalLogs(),
+      ]);
+      setMembers(fetchedMembers);
+      setLogs(fetchedLogs);
     } catch {}
     setLoading(false);
   }

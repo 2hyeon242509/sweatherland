@@ -56,17 +56,11 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
     setBusy(true);
     setError('');
     try {
-      const raw  = await AsyncStorage.getItem('@user_profiles');
-      const list: UserProfile[] = raw ? JSON.parse(raw) : [];
-      const user = list.find(p => p.username === username.trim());
+      const { loginUserProfile } = await import('../lib/supabase');
+      const user = await loginUserProfile(username.trim(), currentPin);
 
       if (!user) {
-        setError('아이디를 찾을 수 없어요. 가입해주세요!');
-        resetPin();
-        return;
-      }
-      if (user.pin !== currentPin) {
-        setError('PIN이 틀렸어요 🔐  다시 입력해주세요');
+        setError('아이디 또는 PIN이 올바르지 않아요 🔐');
         resetPin();
         return;
       }

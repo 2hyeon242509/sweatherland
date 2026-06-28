@@ -69,9 +69,9 @@ export default function RegisterScreen({ onComplete, onBack }: Props) {
 
     /* 중복 아이디 확인 */
     try {
-      const raw = await AsyncStorage.getItem('@user_profiles');
-      const list: UserProfile[] = raw ? JSON.parse(raw) : [];
-      if (list.find(x => x.username === u)) {
+      const { checkUsernameExists } = await import('../lib/supabase');
+      const exists = await checkUsernameExists(u);
+      if (exists) {
         setError('이미 사용 중인 아이디예요 🙁');
         return;
       }
@@ -144,12 +144,13 @@ export default function RegisterScreen({ onComplete, onBack }: Props) {
       createdAt:   now,
     };
     try {
-      const raw  = await AsyncStorage.getItem('@user_profiles');
-      const list: UserProfile[] = raw ? JSON.parse(raw) : [];
-      list.push(profile);
-      await AsyncStorage.setItem('@user_profiles', JSON.stringify(list));
+      const { registerUserProfile } = await import('../lib/supabase');
+      await registerUserProfile(profile);
       await Session.setItem('@active_user', profile.username);
-    } catch {}
+    } catch (e: any) {
+      setError('가입 중 오류가 발생했어요: ' + (e.message ?? ''));
+      return;
+    }
     onComplete(profile);
   }
 

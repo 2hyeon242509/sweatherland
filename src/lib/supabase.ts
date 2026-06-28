@@ -22,8 +22,8 @@ import { createClient } from '@supabase/supabase-js';
  * CREATE POLICY "anon_select" ON mood_logs FOR SELECT USING (true);
  * ────────────────────────────────────────
  */
-export const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-export const SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
+export const SUPABASE_URL = 'https://ifctmlafvrhbshdfrjxz.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_GlOZZ9Bmg45GXDdmKM_58w_7k0HI3O4';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -91,4 +91,75 @@ export function isSupabaseConfigured(): boolean {
     SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co' &&
     SUPABASE_ANON_KEY !== 'YOUR_ANON_PUBLIC_KEY'
   );
+}
+
+// ── 회원 관리 (user_profiles 테이블) ─────────────────────────────────────────
+
+import { UserProfile } from '../types/auth';
+
+function toRow(p: UserProfile) {
+  return {
+    username:     p.username,
+    pin:          p.pin,
+    emoji:        p.emoji,
+    real_name:    p.realName,
+    student_id:   p.studentId,
+    phone:        p.phone,
+    consent_date: p.consentDate,
+    created_at:   p.createdAt,
+  };
+}
+
+function fromRow(row: any): UserProfile {
+  return {
+    username:    row.username,
+    pin:         row.pin,
+    emoji:       row.emoji,
+    realName:    row.real_name   ?? '',
+    studentId:   row.student_id  ?? '',
+    phone:       row.phone       ?? '',
+    consentDate: row.consent_date ?? '',
+    createdAt:   row.created_at  ?? '',
+  };
+}
+
+/** 아이디 중복 확인 */
+export async function checkUsernameExists(username: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('username')
+    .eq('username', username)
+    .maybeSingle();
+  return !!data;
+}
+
+/** 회원 가입 */
+export async function registerUserProfile(profile: UserProfile): Promise<void> {
+  const { error } = await supabase.from('user_profiles').insert([toRow(profile)]);
+  if (error) throw error;
+}
+
+/** 로그인: username + pin 일치 여부 확인 후 프로필 반환 */
+export async function loginUserProfile(
+  username: string,
+  pin: string,
+): Promise<UserProfile | null> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle();
+  if (error || !data) return null;
+  if (data.pin !== pin) return null;
+  return fromRow(data);
+}
+
+/** 전체 회원 목록 (관리자용) */
+export async function fetchAllUserProfiles(): Promise<UserProfile[]> {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(fromRow);
 }
