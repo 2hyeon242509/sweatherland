@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>S.WEATHER LAND — 관리자</title>
+  <title>S.WEATHER LAND &#x2014; 관리자</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F5;color:#111;height:100vh;display:flex;flex-direction:column}
-    a{color:inherit;text-decoration:none}
 
-    /* 로그인 */
+    /* ── 로그인 ── */
     #login{display:flex;align-items:center;justify-content:center;height:100vh;background:#F0F2F5}
     .login-card{background:#fff;border-radius:20px;padding:48px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);width:360px}
     .login-card .icon{font-size:52px}
@@ -23,7 +22,7 @@
     .btn-primary:hover{background:#1A3A52}
     .btn-link{background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:4px 0}
 
-    /* 대시보드 */
+    /* ── 대시보드 ── */
     #dashboard{display:none;flex-direction:column;height:100vh;overflow:hidden}
     .top-bar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:#fff;border-bottom:1px solid #E0E0E0;flex-shrink:0}
     .top-bar-left{display:flex;align-items:center;gap:12px}
@@ -38,28 +37,29 @@
     .btn-exit{background:#eee;color:#555}
     .btn-exit:hover{background:#ddd}
 
-    /* stats */
+    /* ── stats ── */
     .stats-bar{display:flex;gap:10px;padding:12px 24px;background:#fff;border-bottom:1px solid #E0E0E0;overflow-x:auto;flex-shrink:0}
     .stat{background:#E8EEF4;border-radius:12px;padding:10px 18px;display:flex;flex-direction:column;align-items:center;min-width:90px}
     .stat-num{font-size:22px;font-weight:800;color:#2A5480}
     .stat-lbl{font-size:10px;color:#666;margin-top:2px}
 
-    /* tabs */
+    /* ── tabs ── */
     .tabs{display:flex;background:#fff;border-bottom:1px solid #E0E0E0;flex-shrink:0;overflow-x:auto}
     .tab{padding:12px 20px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
     .tab.active{color:#2A5480;font-weight:700;border-bottom-color:#2A5480}
 
-    /* toolbar */
+    /* ── toolbar ── */
     .toolbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#F8F8F8;border-bottom:1px solid #E0E0E0;flex-shrink:0;flex-wrap:wrap}
     .search-box{flex:1;min-width:160px;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:7px 12px}
     .search-box input{border:none;outline:none;font-size:13px;flex:1;color:#111}
-    .search-box svg{flex-shrink:0}
     .btn-csv{display:flex;align-items:center;gap:5px;background:#2A5480;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
     .btn-csv:hover{background:#1A3A52}
+    .btn-green{display:flex;align-items:center;gap:5px;background:#27AE60;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
+    .btn-green:hover{background:#1e8a4a}
     .btn-sheets{display:flex;align-items:center;gap:5px;background:#0F9D58;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
     .btn-sheets:hover{background:#0b7a44}
 
-    /* table */
+    /* ── table ── */
     .table-wrap{flex:1;overflow-y:auto}
     table{width:100%;border-collapse:collapse;font-size:12px}
     thead tr{background:#E8EEF4;position:sticky;top:0}
@@ -74,8 +74,34 @@
     .badge-ok{background:#E8F5E9;color:#27AE60}
     .badge-no{color:#bbb}
     .badge-warn{background:#FFF8E1;color:#E65100;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700}
+    .badge-off{background:#F5F5F5;color:#999;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700}
 
-    /* sheets modal */
+    /* ── 미션 풀 관리 버튼 ── */
+    .btn-edit{padding:4px 11px;background:#E8EEF4;color:#2A5480;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;margin-right:4px}
+    .btn-edit:hover{background:#d0dce9}
+    .btn-del{padding:4px 11px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700}
+    .btn-del:hover{background:#fecaca}
+
+    /* ── 미션 추가/수정 모달 ── */
+    #mission-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;align-items:center;justify-content:center}
+    #mission-modal.open{display:flex}
+    .mission-form-card{background:#fff;border-radius:20px;padding:32px;max-width:440px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+    .mission-form-card h2{font-size:18px;font-weight:800;margin-bottom:22px;color:#111}
+    .form-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+    .form-row label{font-size:12px;font-weight:700;color:#555}
+    .form-row input[type=text],.form-row input[type=number],.form-row select{padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;color:#111}
+    .form-row input:focus,.form-row select:focus{border-color:#2A5480}
+    .form-row-check{display:flex;flex-direction:row;align-items:center;gap:8px;margin-bottom:14px}
+    .form-row-check label{font-size:13px;color:#333;cursor:pointer}
+    .form-row-check input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:#2A5480}
+    .form-actions{display:flex;gap:10px;margin-top:20px}
+    .btn-save{flex:1;padding:13px;background:#2A5480;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+    .btn-save:hover{background:#1A3A52}
+    .btn-cancel-form{padding:13px 20px;background:#eee;color:#555;border:none;border-radius:10px;font-size:14px;cursor:pointer;font-weight:600}
+    .btn-cancel-form:hover{background:#ddd}
+    .emoji-preview{font-size:36px;text-align:center;padding:8px 0}
+
+    /* ── sheets modal ── */
     #sheets-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;align-items:center;justify-content:center}
     #sheets-modal.open{display:flex}
     .sheets-card{background:#fff;border-radius:16px;padding:32px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
@@ -84,10 +110,9 @@
     .sheets-card code{display:block;background:#F4F4F4;border-radius:8px;padding:12px;font-size:12px;color:#111;word-break:break-all;margin-bottom:12px;user-select:all}
     .sheets-card .close-btn{margin-top:8px;width:100%;padding:12px;background:#E8EEF4;border:none;border-radius:10px;font-size:14px;font-weight:700;color:#2A5480;cursor:pointer}
 
-    /* toast */
+    /* ── toast ── */
     #toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
     #toast.show{opacity:1}
-
     .loading{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px}
   </style>
 </head>
@@ -126,15 +151,7 @@
 
   <div class="stats-bar" id="stats-bar"></div>
   <div class="tabs" id="tabs"></div>
-
-  <div class="toolbar">
-    <div class="search-box">
-      <svg width="14" height="14" fill="none" stroke="#aaa" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="search-input" placeholder="검색…" oninput="render()" />
-    </div>
-    <button class="btn-csv" onclick="downloadCSV()">&#x2B07; CSV 다운로드</button>
-    <button class="btn-sheets" onclick="openSheets()">&#x1F4CA; Google Sheets 연동</button>
-  </div>
+  <div class="toolbar" id="toolbar"></div>
 
   <div class="table-wrap" id="table-wrap">
     <div class="loading">데이터를 불러오는 중…</div>
@@ -146,23 +163,59 @@
   <div class="sheets-card">
     <h2>&#x1F4CA; Google Sheets 자동 연동</h2>
     <p>Google Sheets에서 아래 수식을 셀에 입력하면 데이터가 자동으로 불러와집니다.</p>
-
     <p><strong>회원 명단</strong></p>
     <code id="sheet-url-members"></code>
-
     <p><strong>감정 기록</strong></p>
     <code id="sheet-url-moods"></code>
-
     <p><strong>미션 기록</strong></p>
     <code id="sheet-url-missions"></code>
-
     <p><strong>일별 활동</strong></p>
     <code id="sheet-url-daily"></code>
-
-    <p style="font-size:12px;color:#999">
-      Google Sheets에서 빈 셀 클릭 후 위 수식을 붙여넣고 Enter를 누르세요.
-    </p>
+    <p style="font-size:12px;color:#999">Google Sheets에서 빈 셀 클릭 후 위 수식을 붙여넣고 Enter를 누르세요.</p>
     <button class="close-btn" onclick="document.getElementById('sheets-modal').classList.remove('open')">닫기</button>
+  </div>
+</div>
+
+<!-- 미션 추가/수정 모달 -->
+<div id="mission-modal">
+  <div class="mission-form-card">
+    <h2 id="modal-title">미션 추가</h2>
+    <input type="hidden" id="m-db-id" value="" />
+    <div class="form-row">
+      <label>이모지</label>
+      <input type="text" id="m-emoji" placeholder="🎯" maxlength="4" oninput="document.getElementById('m-emoji-preview').textContent=this.value||'?'" />
+      <div class="emoji-preview" id="m-emoji-preview">?</div>
+    </div>
+    <div class="form-row">
+      <label>미션 이름</label>
+      <input type="text" id="m-label" placeholder="예: 물 한 잔 마시기" maxlength="30" />
+    </div>
+    <div class="form-row">
+      <label>포인트 (&#x1F4A7;)</label>
+      <select id="m-points">
+        <option value="5">5 💧</option>
+        <option value="10" selected>10 💧</option>
+        <option value="15">15 💧</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>스탯</label>
+      <select id="m-stat">
+        <option value="vitality">vitality — 활력</option>
+        <option value="calm">calm — 안정</option>
+        <option value="connect">connect — 연결</option>
+        <option value="creative">creative — 창의</option>
+        <option value="care">care — 돌봄</option>
+      </select>
+    </div>
+    <div class="form-row-check">
+      <input type="checkbox" id="m-active" checked />
+      <label for="m-active">활성화 (앱에 표시)</label>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel-form" onclick="closeMissionModal()">취소</button>
+      <button class="btn-save" onclick="saveMission()">저장하기</button>
+    </div>
   </div>
 </div>
 
@@ -170,14 +223,14 @@
 <div id="toast"></div>
 
 <script>
-  const SUPABASE_URL = 'https://ifctmlafvrhbshdfrjxz.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_GlOZZ9Bmg45GXDdmKM_58w_7k0HI3O4';
-  const ADMIN_PIN    = '1234';
+  var SUPABASE_URL = 'https://ifctmlafvrhbshdfrjxz.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_GlOZZ9Bmg45GXDdmKM_58w_7k0HI3O4';
+  var ADMIN_PIN    = '1234';
 
-  const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+  var { createClient } = supabase;
+  var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  var data = { members: [], moods: [], missions: [], daily: [] };
+  var data = { members: [], moods: [], missions: [], daily: [], pool: [] };
   var currentTab = 'members';
 
   /* ── 토스트 ── */
@@ -210,7 +263,7 @@
     document.getElementById('login').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('pin-input').value = '';
-    data = { members: [], moods: [], missions: [], daily: [] };
+    data = { members: [], moods: [], missions: [], daily: [], pool: [] };
   }
 
   /* ── 데이터 로드 ── */
@@ -218,20 +271,23 @@
     var li = document.getElementById('loading-indicator');
     if (li) li.style.display = 'inline';
     try {
-      var r = await Promise.all([
+      var results = await Promise.all([
         db.from('user_profiles').select('username,real_name,student_id,phone,emoji,created_at,friend_code,sweat_points').order('created_at', { ascending: false }),
         db.from('mood_logs').select('*').order('logged_at', { ascending: false }),
         db.from('mission_logs').select('*').order('logged_at', { ascending: false }),
         db.from('daily_records').select('*').order('record_date', { ascending: false }),
+        db.from('mission_pool').select('*').order('sort_order', { ascending: true }).order('label', { ascending: true }),
       ]);
-      data.members  = r[0].data || [];
-      data.moods    = r[1].data || [];
-      data.missions = r[2].data || [];
-      data.daily    = r[3].data || [];
-    } catch(e) { console.error(e); showToast('데이터 로딩 실패: ' + e.message); }
+      data.members  = results[0].data || [];
+      data.moods    = results[1].data || [];
+      data.missions = results[2].data || [];
+      data.daily    = results[3].data || [];
+      data.pool     = results[4].data || [];
+    } catch(e) { showToast('데이터 로딩 실패: ' + e.message); }
     if (li) li.style.display = 'none';
     renderStats();
     renderTabs();
+    renderToolbar();
     render();
   }
 
@@ -242,56 +298,31 @@
       showToast('모든 사용자에게 이미 친구코드가 배정되어 있어요 ✅');
       return;
     }
+    if (!window.confirm(missing.length + '명에게 친구코드가 없습니다.\n지금 자동 배정할까요?')) return;
 
-    var confirm = window.confirm(
-      missing.length + '명에게 친구코드가 없습니다.\n지금 고유한 친구코드를 자동 배정할까요?'
-    );
-    if (!confirm) return;
-
-    // 이미 사용 중인 코드 수집
-    var usedCodes = new Set(
-      data.members.filter(function(m) { return !!m.friend_code; })
-               .map(function(m) { return m.friend_code; })
-    );
-
+    var usedCodes = new Set(data.members.filter(function(m) { return !!m.friend_code; }).map(function(m) { return m.friend_code; }));
     function makeCode() {
-      var code;
-      var tries = 0;
-      do {
-        code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-        tries++;
-      } while (usedCodes.has(code) && tries < 1000);
+      var code, tries = 0;
+      do { code = String(Math.floor(Math.random() * 10000)).padStart(4, '0'); tries++; }
+      while (usedCodes.has(code) && tries < 1000);
       usedCodes.add(code);
       return code;
     }
 
     var li = document.getElementById('loading-indicator');
     if (li) li.style.display = 'inline';
-
     var failed = 0;
     for (var i = 0; i < missing.length; i++) {
-      var user = missing[i];
       var code = makeCode();
-      var res = await db.from('user_profiles')
-        .update({ friend_code: code })
-        .eq('username', user.username);
-      if (res.error) {
-        console.error('배정 실패:', user.username, res.error);
-        failed++;
-      }
+      var res = await db.from('user_profiles').update({ friend_code: code }).eq('username', missing[i].username);
+      if (res.error) failed++;
     }
-
     if (li) li.style.display = 'none';
-
-    if (failed === 0) {
-      showToast(missing.length + '명에게 친구코드 배정 완료! ✅', 3500);
-    } else {
-      showToast((missing.length - failed) + '명 성공, ' + failed + '명 실패. RLS 정책을 확인해주세요.');
-    }
+    showToast(failed === 0 ? missing.length + '명 친구코드 배정 완료! ✅' : (missing.length - failed) + '명 성공, ' + failed + '명 실패');
     await loadAll();
   }
 
-  /* ── KST 시간 포맷 ── */
+  /* ── KST 포맷 ── */
   function fmtKST(iso) {
     if (!iso) return '—';
     var d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
@@ -304,8 +335,8 @@
   function renderStats() {
     var fullDays   = data.daily.filter(function(d) { return d.all_missions_done; }).length;
     var missionUsr = (new Set(data.missions.map(function(m) { return m.username; }))).size;
-    var avgMiss    = missionUsr > 0 ? Math.round(data.missions.length / missionUsr) : 0;
     var noCode     = data.members.filter(function(m) { return !m.friend_code; }).length;
+    var activeMissions = data.pool.filter(function(p) { return p.is_active; }).length;
     var chips = [
       { n: data.members.length,  l: '총 회원' },
       { n: data.moods.length,    l: '감정 기록' },
@@ -313,12 +344,12 @@
       { n: fullDays,             l: '배터리 충전일' },
       { n: missionUsr,           l: '활동 회원' },
       { n: noCode,               l: '코드 미배정', warn: noCode > 0 },
+      { n: activeMissions,       l: '활성 미션 수' },
     ];
     document.getElementById('stats-bar').innerHTML =
       chips.map(function(c) {
-        var color = c.warn ? '#E65100' : '';
         return '<div class="stat" style="' + (c.warn ? 'background:#FFF3E0' : '') + '">'
-          + '<span class="stat-num" style="color:' + (color || '#2A5480') + '">' + c.n + '</span>'
+          + '<span class="stat-num" style="color:' + (c.warn ? '#E65100' : '#2A5480') + '">' + c.n + '</span>'
           + '<span class="stat-lbl">' + c.l + '</span></div>';
       }).join('');
   }
@@ -329,12 +360,14 @@
     { key: 'moods',    label: '감정 기록' },
     { key: 'missions', label: '미션 기록' },
     { key: 'daily',    label: '일별 활동' },
+    { key: 'pool',     label: '&#x1F3AF; 미션 풀 관리' },
   ];
 
   function renderTabs() {
     document.getElementById('tabs').innerHTML = TABS.map(function(t) {
+      var count = t.key === 'pool' ? data.pool.length : data[t.key].length;
       return '<div class="tab ' + (t.key === currentTab ? 'active' : '') + '" onclick="switchTab(\'' + t.key + '\')">'
-        + t.label + ' (' + data[t.key].length + ')</div>';
+        + t.label + ' (' + count + ')</div>';
     }).join('');
   }
 
@@ -343,24 +376,52 @@
     var si = document.getElementById('search-input');
     if (si) si.value = '';
     renderTabs();
+    renderToolbar();
     render();
+  }
+
+  /* ── 툴바 (탭별로 다름) ── */
+  function renderToolbar() {
+    var tb = document.getElementById('toolbar');
+    if (currentTab === 'pool') {
+      tb.innerHTML =
+        '<button class="btn-green" onclick="openAddMission()">&#x2795; 미션 추가</button>'
+        + '<span style="font-size:12px;color:#888;margin-left:4px">미션 풀을 수정하면 앱에 즉시 반영돼요</span>';
+    } else {
+      tb.innerHTML =
+        '<div class="search-box">'
+        + '<svg width="14" height="14" fill="none" stroke="#aaa" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>'
+        + '<input type="text" id="search-input" placeholder="검색…" oninput="render()" />'
+        + '</div>'
+        + '<button class="btn-csv" onclick="downloadCSV()">&#x2B07; CSV 다운로드</button>'
+        + '<button class="btn-sheets" onclick="openSheets()">&#x1F4CA; Google Sheets 연동</button>';
+    }
   }
 
   /* ── 테이블 렌더 ── */
   function render() {
     renderTabs();
     var q    = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
-    var rows = filter(data[currentTab], q);
     var wrap = document.getElementById('table-wrap');
 
+    if (currentTab === 'pool') {
+      var rows = q ? data.pool.filter(function(r) {
+        return Object.values(r).some(function(v) { return String(v || '').toLowerCase().includes(q); });
+      }) : data.pool;
+      wrap.innerHTML = data.pool.length === 0
+        ? '<div class="empty">미션 풀이 비어 있어요.<br><small>아래 SQL을 Supabase에서 실행해 초기 데이터를 입력해주세요.</small></div>'
+        : renderPool(rows);
+      return;
+    }
+
+    var rows = filter(data[currentTab], q);
     if (rows.length === 0) {
       wrap.innerHTML = '<div class="empty">데이터가 없습니다.<br><small>Supabase에 테이블이 생성되어 있는지 확인해주세요.</small></div>';
       return;
     }
-
     if (currentTab === 'members')  wrap.innerHTML = renderMembers(rows);
     if (currentTab === 'moods')    wrap.innerHTML = renderMoods(rows);
-    if (currentTab === 'missions') wrap.innerHTML = renderMissions(rows);
+    if (currentTab === 'missions') wrap.innerHTML = renderMissionLogs(rows);
     if (currentTab === 'daily')    wrap.innerHTML = renderDaily(rows);
   }
 
@@ -372,26 +433,15 @@
   }
 
   function esc(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  /* ── 탭별 렌더 함수 ── */
   function renderMembers(rows) {
     var head = '<thead><tr><th>#</th><th>아이디</th><th>본명</th><th>학번</th><th>전화번호</th><th>이모지</th><th>친구코드</th><th>포인트</th><th>가입일</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      var codeCell = r.friend_code
-        ? '<strong>#' + esc(r.friend_code) + '</strong>'
-        : '<span class="badge-warn">미배정</span>';
-      return '<tr>'
-        + '<td>'+(i+1)+'</td>'
-        + '<td><strong>'+esc(r.username)+'</strong></td>'
-        + '<td>'+esc(r.real_name)+'</td>'
-        + '<td>'+esc(r.student_id)+'</td>'
-        + '<td>'+esc(r.phone)+'</td>'
-        + '<td style="font-size:18px">'+esc(r.emoji)+'</td>'
-        + '<td>'+codeCell+'</td>'
-        + '<td>'+(r.sweat_points||0)+'</td>'
-        + '<td>'+fmtKST(r.created_at)+'</td>'
-        + '</tr>';
+      var codeCell = r.friend_code ? '<strong>#' + esc(r.friend_code) + '</strong>' : '<span class="badge-warn">미배정</span>';
+      return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(r.username)+'</strong></td><td>'+esc(r.real_name)+'</td><td>'+esc(r.student_id)+'</td><td>'+esc(r.phone)+'</td><td style="font-size:18px">'+esc(r.emoji)+'</td><td>'+codeCell+'</td><td>'+(r.sweat_points||0)+'</td><td>'+fmtKST(r.created_at)+'</td></tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
@@ -399,32 +449,16 @@
   function renderMoods(rows) {
     var head = '<thead><tr><th>#</th><th>사용자</th><th>감정</th><th>메모</th><th>기록일시(KST)</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      return '<tr>'
-        + '<td>'+(i+1)+'</td>'
-        + '<td>'+esc(r.user_name)+'</td>'
-        + '<td>'+esc(r.mood_label)+'</td>'
-        + '<td style="color:#666">'+esc(r.memo||'—')+'</td>'
-        + '<td>'+fmtKST(r.logged_at)+'</td>'
-        + '</tr>';
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.user_name)+'</td><td>'+esc(r.mood_label)+'</td><td style="color:#666">'+esc(r.memo||'—')+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
-  function renderMissions(rows) {
+  function renderMissionLogs(rows) {
     var head = '<thead><tr><th>#</th><th>사용자</th><th>미션</th><th>타입</th><th>포인트</th><th>스탯</th><th>완료일시(KST)</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      var badge = r.mission_type === 'custom'
-        ? '<span class="badge badge-custom">나만의</span>'
-        : '<span class="badge badge-server">추천</span>';
-      return '<tr>'
-        + '<td>'+(i+1)+'</td>'
-        + '<td>'+esc(r.username)+'</td>'
-        + '<td>'+esc(r.mission_label)+'</td>'
-        + '<td>'+badge+'</td>'
-        + '<td>'+esc(r.points)+'</td>'
-        + '<td>'+esc(r.stat)+'</td>'
-        + '<td>'+fmtKST(r.logged_at)+'</td>'
-        + '</tr>';
+      var badge = r.mission_type === 'custom' ? '<span class="badge badge-custom">나만의</span>' : '<span class="badge badge-server">추천</span>';
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.mission_label)+'</td><td>'+badge+'</td><td>'+esc(r.points)+'</td><td>'+esc(r.stat)+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
@@ -432,16 +466,113 @@
   function renderDaily(rows) {
     var head = '<thead><tr><th>#</th><th>사용자</th><th>날짜</th><th>미션 완료</th><th>에너지 100</th><th>완료 수</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      return '<tr>'
-        + '<td>'+(i+1)+'</td>'
-        + '<td>'+esc(r.username)+'</td>'
-        + '<td>'+esc(r.record_date)+'</td>'
-        + '<td>'+(r.all_missions_done ? '<span class="badge badge-ok">완료</span>' : '<span class="badge-no">—</span>')+'</td>'
-        + '<td>'+(r.energy_100 ? '<span class="badge badge-ok">달성</span>' : '<span class="badge-no">—</span>')+'</td>'
-        + '<td>'+esc(r.missions_completed)+'</td>'
-        + '</tr>';
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.record_date)+'</td>'
+        +'<td>'+(r.all_missions_done?'<span class="badge badge-ok">완료</span>':'<span class="badge-no">—</span>')+'</td>'
+        +'<td>'+(r.energy_100?'<span class="badge badge-ok">달성</span>':'<span class="badge-no">—</span>')+'</td>'
+        +'<td>'+esc(r.missions_completed)+'</td></tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
+  }
+
+  /* ── 미션 풀 렌더 ── */
+  function renderPool(rows) {
+    var head = '<thead><tr><th>#</th><th>이모지</th><th>미션 이름</th><th>포인트</th><th>스탯</th><th>상태</th><th>관리</th></tr></thead>';
+    var body = rows.map(function(r, i) {
+      var statusBadge = r.is_active ? '<span class="badge badge-ok">활성</span>' : '<span class="badge badge-off">비활성</span>';
+      return '<tr>'
+        + '<td>'+(i+1)+'</td>'
+        + '<td style="font-size:22px">'+esc(r.emoji)+'</td>'
+        + '<td><strong>'+esc(r.label)+'</strong></td>'
+        + '<td>'+esc(r.points)+' &#x1F4A7;</td>'
+        + '<td><span style="color:#666;font-size:11px">'+esc(r.stat)+'</span></td>'
+        + '<td>'+statusBadge+'</td>'
+        + '<td>'
+        + '<button class="btn-edit" onclick="openEditMission('+r.id+')">수정</button>'
+        + '<button class="btn-del" onclick="deleteMission('+r.id+',\''+esc(r.label)+'\')">삭제</button>'
+        + '</td></tr>';
+    }).join('');
+    return '<table>'+head+'<tbody>'+body+'</tbody></table>';
+  }
+
+  /* ── 미션 풀 CRUD ── */
+  function openAddMission() {
+    document.getElementById('modal-title').textContent = '미션 추가';
+    document.getElementById('m-db-id').value = '';
+    document.getElementById('m-emoji').value = '';
+    document.getElementById('m-emoji-preview').textContent = '?';
+    document.getElementById('m-label').value = '';
+    document.getElementById('m-points').value = '10';
+    document.getElementById('m-stat').value = 'vitality';
+    document.getElementById('m-active').checked = true;
+    document.getElementById('mission-modal').classList.add('open');
+    setTimeout(function() { document.getElementById('m-emoji').focus(); }, 100);
+  }
+
+  function openEditMission(id) {
+    var mission = data.pool.find(function(m) { return m.id === id; });
+    if (!mission) return;
+    document.getElementById('modal-title').textContent = '미션 수정';
+    document.getElementById('m-db-id').value = id;
+    document.getElementById('m-emoji').value = mission.emoji;
+    document.getElementById('m-emoji-preview').textContent = mission.emoji || '?';
+    document.getElementById('m-label').value = mission.label;
+    document.getElementById('m-points').value = String(mission.points);
+    document.getElementById('m-stat').value = mission.stat;
+    document.getElementById('m-active').checked = !!mission.is_active;
+    document.getElementById('mission-modal').classList.add('open');
+  }
+
+  function closeMissionModal() {
+    document.getElementById('mission-modal').classList.remove('open');
+  }
+
+  async function saveMission() {
+    var id       = document.getElementById('m-db-id').value;
+    var emoji    = document.getElementById('m-emoji').value.trim();
+    var label    = document.getElementById('m-label').value.trim();
+    var points   = parseInt(document.getElementById('m-points').value, 10);
+    var stat     = document.getElementById('m-stat').value;
+    var isActive = document.getElementById('m-active').checked;
+
+    if (!emoji) { showToast('이모지를 입력해주세요 😊'); return; }
+    if (!label) { showToast('미션 이름을 입력해주세요'); return; }
+
+    var payload = { emoji: emoji, label: label, points: points, stat: stat, is_active: isActive };
+
+    var li = document.getElementById('loading-indicator');
+    if (li) li.style.display = 'inline';
+
+    var error;
+    if (id) {
+      var res = await db.from('mission_pool').update(payload).eq('id', parseInt(id, 10));
+      error = res.error;
+    } else {
+      var missionId = 'adm_' + Date.now();
+      var res = await db.from('mission_pool').insert([Object.assign({}, payload, { mission_id: missionId, sort_order: 999 })]);
+      error = res.error;
+    }
+
+    if (li) li.style.display = 'none';
+
+    if (error) {
+      showToast('저장 실패: ' + error.message);
+      return;
+    }
+
+    showToast(id ? '미션이 수정됐어요 ✅' : '미션이 추가됐어요 ✅');
+    closeMissionModal();
+    await loadAll();
+  }
+
+  async function deleteMission(id, label) {
+    if (!window.confirm('"' + label + '"\n이 미션을 삭제할까요?\n(삭제 후 앱에서 즉시 사라져요)')) return;
+    var li = document.getElementById('loading-indicator');
+    if (li) li.style.display = 'inline';
+    var res = await db.from('mission_pool').delete().eq('id', id);
+    if (li) li.style.display = 'none';
+    if (res.error) { showToast('삭제 실패: ' + res.error.message); return; }
+    showToast('미션이 삭제됐어요');
+    await loadAll();
   }
 
   /* ── CSV 다운로드 ── */
@@ -465,8 +596,8 @@
       body   = rows.map(function(r, i) { return [i+1, r.username, r.record_date, r.all_missions_done?'O':'X', r.energy_100?'O':'X', r.missions_completed]; });
     }
 
-    var BOM  = '﻿';
-    var csv  = BOM + [header].concat(body).map(function(r) {
+    var BOM = '﻿';
+    var csv = BOM + [header].concat(body).map(function(r) {
       return r.map(function(c) { return '"' + String(c).replace(/"/g,'""') + '"'; }).join(',');
     }).join('\n');
     var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -478,7 +609,7 @@
     URL.revokeObjectURL(url);
   }
 
-  /* ── Google Sheets 연동 안내 ── */
+  /* ── Google Sheets 연동 ── */
   function openSheets() {
     var base = location.origin + '/api/export';
     document.getElementById('sheet-url-members').textContent  = '=IMPORTDATA("' + base + '?table=members")';
@@ -491,6 +622,10 @@
   document.getElementById('sheets-modal').addEventListener('click', function(e) {
     if (e.target === document.getElementById('sheets-modal'))
       document.getElementById('sheets-modal').classList.remove('open');
+  });
+  document.getElementById('mission-modal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('mission-modal'))
+      closeMissionModal();
   });
 </script>
 </body>

@@ -11,6 +11,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGame } from '../store/GameContext';
 import { COLORS, SHADOW, Mission, StatKey, getDailyServerMissions, MISSION_POOL } from '../constants';
 
+/** 날짜 시드 기반으로 풀에서 count개 뽑기 */
+function pickDailyMissions(dateStr: string, pool: Mission[], count = 5): Mission[] {
+  let seed = 0;
+  for (let i = 0; i < dateStr.length; i++) {
+    seed = ((seed * 31 + dateStr.charCodeAt(i)) & 0xffffffff) >>> 0;
+  }
+  const copy = [...pool];
+  const result: Mission[] = [];
+  while (result.length < count && copy.length > 0) {
+    seed = ((seed * 1664525 + 1013904223) & 0xffffffff) >>> 0;
+    const idx = seed % copy.length;
+    result.push(copy.splice(idx, 1)[0]);
+  }
+  return result;
+}
+
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────────
 
 function getTodayKST(): string {
@@ -119,8 +135,10 @@ export default function MissionScreen() {
 
   const today = getTodayKST();
 
-  // ── 서버 미션 ────────────────────────────────────────────────────────────────
-  const baseMissions = useMemo(() => getDailyServerMissions(today), [today]);
+  // ── 서버 미션 (Supabase 풀 우선, 없으면 로컬 상수 fallback) ─────────────────
+  const [remotePool,     setRemotePool]     = useState<Mission[]>([]);
+  const activePool = remotePool.length > 0 ? remotePool : MISSION_POOL;
+  const baseMissions = useMemo(() => pickDailyMissions(today, activePool), [today, activePool]);
   const [swappedMissions, setSwappedMissions] = useState<Mission[] | null>(null);
   const [swapCount,       setSwapCount]       = useState(0);
   const effectiveMissions = swappedMissions ?? baseMissions;
@@ -151,6 +169,13 @@ export default function MissionScreen() {
       delay: Math.random() * 700,
     })),
   []);
+
+  // ── Supabase 미션 풀 로드 ────────────────────────────────────────────────────
+  useEffect(() => {
+    import('../lib/supabase').then(({ fetchActiveMissions }) => {
+      fetchActiveMissions().then(pool => { if (pool.length > 0) setRemotePool(pool); }).catch(() => {});
+    });
+  }, []);
 
   // ── 초기 로드 ────────────────────────────────────────────────────────────────
   useEffect(() => {

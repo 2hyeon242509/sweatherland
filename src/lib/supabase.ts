@@ -239,6 +239,27 @@ export async function updateUserPin(username: string, newPin: string): Promise<v
   if (error) throw error;
 }
 
+// ── mission_pool 테이블 (관리자가 관리하는 미션 목록) ─────────────────────────
+
+import { Mission, StatKey } from '../constants';
+
+/** Supabase mission_pool에서 활성화된 미션 전체 조회 */
+export async function fetchActiveMissions(): Promise<Mission[]> {
+  const { data, error } = await supabase
+    .from('mission_pool')
+    .select('mission_id, label, emoji, points, stat')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error || !data || data.length === 0) return [];
+  return data.map((r: any) => ({
+    id:     r.mission_id,
+    label:  r.label,
+    emoji:  r.emoji,
+    points: Number(r.points),
+    stat:   r.stat as StatKey,
+  }));
+}
+
 // ── mission_logs 테이블 ───────────────────────────────────────────────────────
 
 export interface MissionLogEntry {
