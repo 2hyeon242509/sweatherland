@@ -33,6 +33,8 @@
     .btn-sm{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none}
     .btn-refresh{background:#E8EEF4;color:#2A5480}
     .btn-refresh:hover{background:#d0dce9}
+    .btn-assign{background:#F0F7EE;color:#27AE60;border:1px solid #C8E6C9}
+    .btn-assign:hover{background:#E0F0DD}
     .btn-exit{background:#eee;color:#555}
     .btn-exit:hover{background:#ddd}
 
@@ -48,8 +50,8 @@
     .tab.active{color:#2A5480;font-weight:700;border-bottom-color:#2A5480}
 
     /* toolbar */
-    .toolbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#F8F8F8;border-bottom:1px solid #E0E0E0;flex-shrink:0}
-    .search-box{flex:1;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:7px 12px}
+    .toolbar{display:flex;align-items:center;gap:10px;padding:10px 24px;background:#F8F8F8;border-bottom:1px solid #E0E0E0;flex-shrink:0;flex-wrap:wrap}
+    .search-box{flex:1;min-width:160px;display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #ddd;border-radius:8px;padding:7px 12px}
     .search-box input{border:none;outline:none;font-size:13px;flex:1;color:#111}
     .search-box svg{flex-shrink:0}
     .btn-csv{display:flex;align-items:center;gap:5px;background:#2A5480;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer}
@@ -71,6 +73,7 @@
     .badge-server{background:#F0F0F0;color:#666}
     .badge-ok{background:#E8F5E9;color:#27AE60}
     .badge-no{color:#bbb}
+    .badge-warn{background:#FFF8E1;color:#E65100;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700}
 
     /* sheets modal */
     #sheets-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;align-items:center;justify-content:center}
@@ -80,6 +83,10 @@
     .sheets-card p{font-size:13px;color:#555;line-height:22px;margin-bottom:12px}
     .sheets-card code{display:block;background:#F4F4F4;border-radius:8px;padding:12px;font-size:12px;color:#111;word-break:break-all;margin-bottom:12px;user-select:all}
     .sheets-card .close-btn{margin-top:8px;width:100%;padding:12px;background:#E8EEF4;border:none;border-radius:10px;font-size:14px;font-weight:700;color:#2A5480;cursor:pointer}
+
+    /* toast */
+    #toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+    #toast.show{opacity:1}
 
     .loading{display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:14px}
   </style>
@@ -95,7 +102,7 @@
     <input type="password" id="pin-input" placeholder="관리자 PIN" maxlength="8" inputmode="numeric" />
     <span class="err" id="err-msg"></span>
     <button class="btn-primary" onclick="doLogin()">접속하기</button>
-    <button class="btn-link" onclick="location.href='/'">← 앱으로 돌아가기</button>
+    <button class="btn-link" onclick="location.href='/'">&#x2190; 앱으로 돌아가기</button>
   </div>
 </div>
 
@@ -111,7 +118,8 @@
     </div>
     <div class="top-bar-right">
       <span id="loading-indicator" style="font-size:12px;color:#888;display:none">로딩 중…</span>
-      <button class="btn-sm btn-refresh" onclick="loadAll()">↻ 새로고침</button>
+      <button class="btn-sm btn-assign" onclick="assignMissingFriendCodes()" title="친구코드가 없는 사용자에게 일괄 배정">&#x2728; 친구코드 배정</button>
+      <button class="btn-sm btn-refresh" onclick="loadAll()">&#x21BB; 새로고침</button>
       <button class="btn-sm btn-exit" onclick="logout()">나가기</button>
     </div>
   </div>
@@ -158,6 +166,9 @@
   </div>
 </div>
 
+<!-- 토스트 알림 -->
+<div id="toast"></div>
+
 <script>
   const SUPABASE_URL = 'https://ifctmlafvrhbshdfrjxz.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_GlOZZ9Bmg45GXDdmKM_58w_7k0HI3O4';
@@ -166,10 +177,18 @@
   const { createClient } = supabase;
   const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let data = { members: [], moods: [], missions: [], daily: [] };
-  let currentTab = 'members';
+  var data = { members: [], moods: [], missions: [], daily: [] };
+  var currentTab = 'members';
 
-  /* 로그인 */
+  /* ── 토스트 ── */
+  function showToast(msg, ms) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, ms || 2800);
+  }
+
+  /* ── 로그인 ── */
   document.addEventListener('DOMContentLoaded', function() {
     var inp = document.getElementById('pin-input');
     if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
@@ -194,7 +213,7 @@
     data = { members: [], moods: [], missions: [], daily: [] };
   }
 
-  /* 데이터 로드 */
+  /* ── 데이터 로드 ── */
   async function loadAll() {
     var li = document.getElementById('loading-indicator');
     if (li) li.style.display = 'inline';
@@ -209,41 +228,102 @@
       data.moods    = r[1].data || [];
       data.missions = r[2].data || [];
       data.daily    = r[3].data || [];
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error(e); showToast('데이터 로딩 실패: ' + e.message); }
     if (li) li.style.display = 'none';
     renderStats();
     renderTabs();
     render();
   }
 
-  /* KST 시간 포맷 */
+  /* ── 친구코드 일괄 배정 ── */
+  async function assignMissingFriendCodes() {
+    var missing = data.members.filter(function(m) { return !m.friend_code; });
+    if (missing.length === 0) {
+      showToast('모든 사용자에게 이미 친구코드가 배정되어 있어요 ✅');
+      return;
+    }
+
+    var confirm = window.confirm(
+      missing.length + '명에게 친구코드가 없습니다.\n지금 고유한 친구코드를 자동 배정할까요?'
+    );
+    if (!confirm) return;
+
+    // 이미 사용 중인 코드 수집
+    var usedCodes = new Set(
+      data.members.filter(function(m) { return !!m.friend_code; })
+               .map(function(m) { return m.friend_code; })
+    );
+
+    function makeCode() {
+      var code;
+      var tries = 0;
+      do {
+        code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        tries++;
+      } while (usedCodes.has(code) && tries < 1000);
+      usedCodes.add(code);
+      return code;
+    }
+
+    var li = document.getElementById('loading-indicator');
+    if (li) li.style.display = 'inline';
+
+    var failed = 0;
+    for (var i = 0; i < missing.length; i++) {
+      var user = missing[i];
+      var code = makeCode();
+      var res = await db.from('user_profiles')
+        .update({ friend_code: code })
+        .eq('username', user.username);
+      if (res.error) {
+        console.error('배정 실패:', user.username, res.error);
+        failed++;
+      }
+    }
+
+    if (li) li.style.display = 'none';
+
+    if (failed === 0) {
+      showToast(missing.length + '명에게 친구코드 배정 완료! ✅', 3500);
+    } else {
+      showToast((missing.length - failed) + '명 성공, ' + failed + '명 실패. RLS 정책을 확인해주세요.');
+    }
+    await loadAll();
+  }
+
+  /* ── KST 시간 포맷 ── */
   function fmtKST(iso) {
     if (!iso) return '—';
     var d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
-    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate())
+      + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
   }
   function pad(n) { return String(n).padStart(2, '0'); }
 
-  /* 통계 */
+  /* ── 통계 ── */
   function renderStats() {
     var fullDays   = data.daily.filter(function(d) { return d.all_missions_done; }).length;
     var missionUsr = (new Set(data.missions.map(function(m) { return m.username; }))).size;
     var avgMiss    = missionUsr > 0 ? Math.round(data.missions.length / missionUsr) : 0;
+    var noCode     = data.members.filter(function(m) { return !m.friend_code; }).length;
     var chips = [
       { n: data.members.length,  l: '총 회원' },
       { n: data.moods.length,    l: '감정 기록' },
       { n: data.missions.length, l: '미션 완료' },
       { n: fullDays,             l: '배터리 충전일' },
       { n: missionUsr,           l: '활동 회원' },
-      { n: avgMiss,              l: '인당 미션' },
+      { n: noCode,               l: '코드 미배정', warn: noCode > 0 },
     ];
     document.getElementById('stats-bar').innerHTML =
       chips.map(function(c) {
-        return '<div class="stat"><span class="stat-num">' + c.n + '</span><span class="stat-lbl">' + c.l + '</span></div>';
+        var color = c.warn ? '#E65100' : '';
+        return '<div class="stat" style="' + (c.warn ? 'background:#FFF3E0' : '') + '">'
+          + '<span class="stat-num" style="color:' + (color || '#2A5480') + '">' + c.n + '</span>'
+          + '<span class="stat-lbl">' + c.l + '</span></div>';
       }).join('');
   }
 
-  /* 탭 */
+  /* ── 탭 ── */
   var TABS = [
     { key: 'members',  label: '회원 명단' },
     { key: 'moods',    label: '감정 기록' },
@@ -253,7 +333,8 @@
 
   function renderTabs() {
     document.getElementById('tabs').innerHTML = TABS.map(function(t) {
-      return '<div class="tab ' + (t.key === currentTab ? 'active' : '') + '" onclick="switchTab(\'' + t.key + '\')">' + t.label + ' (' + data[t.key].length + ')</div>';
+      return '<div class="tab ' + (t.key === currentTab ? 'active' : '') + '" onclick="switchTab(\'' + t.key + '\')">'
+        + t.label + ' (' + data[t.key].length + ')</div>';
     }).join('');
   }
 
@@ -265,10 +346,10 @@
     render();
   }
 
-  /* 테이블 렌더 */
+  /* ── 테이블 렌더 ── */
   function render() {
     renderTabs();
-    var q = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
+    var q    = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
     var rows = filter(data[currentTab], q);
     var wrap = document.getElementById('table-wrap');
 
@@ -297,7 +378,20 @@
   function renderMembers(rows) {
     var head = '<thead><tr><th>#</th><th>아이디</th><th>본명</th><th>학번</th><th>전화번호</th><th>이모지</th><th>친구코드</th><th>포인트</th><th>가입일</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(r.username)+'</strong></td><td>'+esc(r.real_name)+'</td><td>'+esc(r.student_id)+'</td><td>'+esc(r.phone)+'</td><td style="font-size:18px">'+esc(r.emoji)+'</td><td>#'+esc(r.friend_code)+'</td><td>'+(r.sweat_points||0)+'</td><td>'+fmtKST(r.created_at)+'</td></tr>';
+      var codeCell = r.friend_code
+        ? '<strong>#' + esc(r.friend_code) + '</strong>'
+        : '<span class="badge-warn">미배정</span>';
+      return '<tr>'
+        + '<td>'+(i+1)+'</td>'
+        + '<td><strong>'+esc(r.username)+'</strong></td>'
+        + '<td>'+esc(r.real_name)+'</td>'
+        + '<td>'+esc(r.student_id)+'</td>'
+        + '<td>'+esc(r.phone)+'</td>'
+        + '<td style="font-size:18px">'+esc(r.emoji)+'</td>'
+        + '<td>'+codeCell+'</td>'
+        + '<td>'+(r.sweat_points||0)+'</td>'
+        + '<td>'+fmtKST(r.created_at)+'</td>'
+        + '</tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
@@ -305,7 +399,13 @@
   function renderMoods(rows) {
     var head = '<thead><tr><th>#</th><th>사용자</th><th>감정</th><th>메모</th><th>기록일시(KST)</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.user_name)+'</td><td>'+esc(r.mood_label)+'</td><td style="color:#666">'+esc(r.memo||'—')+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
+      return '<tr>'
+        + '<td>'+(i+1)+'</td>'
+        + '<td>'+esc(r.user_name)+'</td>'
+        + '<td>'+esc(r.mood_label)+'</td>'
+        + '<td style="color:#666">'+esc(r.memo||'—')+'</td>'
+        + '<td>'+fmtKST(r.logged_at)+'</td>'
+        + '</tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
@@ -316,7 +416,15 @@
       var badge = r.mission_type === 'custom'
         ? '<span class="badge badge-custom">나만의</span>'
         : '<span class="badge badge-server">추천</span>';
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.mission_label)+'</td><td>'+badge+'</td><td>'+esc(r.points)+'</td><td>'+esc(r.stat)+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
+      return '<tr>'
+        + '<td>'+(i+1)+'</td>'
+        + '<td>'+esc(r.username)+'</td>'
+        + '<td>'+esc(r.mission_label)+'</td>'
+        + '<td>'+badge+'</td>'
+        + '<td>'+esc(r.points)+'</td>'
+        + '<td>'+esc(r.stat)+'</td>'
+        + '<td>'+fmtKST(r.logged_at)+'</td>'
+        + '</tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
@@ -324,15 +432,19 @@
   function renderDaily(rows) {
     var head = '<thead><tr><th>#</th><th>사용자</th><th>날짜</th><th>미션 완료</th><th>에너지 100</th><th>완료 수</th></tr></thead>';
     var body = rows.map(function(r, i) {
-      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.record_date)+'</td>'
-        +'<td>'+(r.all_missions_done ? '<span class="badge badge-ok">완료</span>' : '<span class="badge-no">—</span>')+'</td>'
-        +'<td>'+(r.energy_100 ? '<span class="badge badge-ok">달성</span>' : '<span class="badge-no">—</span>')+'</td>'
-        +'<td>'+esc(r.missions_completed)+'</td></tr>';
+      return '<tr>'
+        + '<td>'+(i+1)+'</td>'
+        + '<td>'+esc(r.username)+'</td>'
+        + '<td>'+esc(r.record_date)+'</td>'
+        + '<td>'+(r.all_missions_done ? '<span class="badge badge-ok">완료</span>' : '<span class="badge-no">—</span>')+'</td>'
+        + '<td>'+(r.energy_100 ? '<span class="badge badge-ok">달성</span>' : '<span class="badge-no">—</span>')+'</td>'
+        + '<td>'+esc(r.missions_completed)+'</td>'
+        + '</tr>';
     }).join('');
     return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
-  /* CSV 다운로드 */
+  /* ── CSV 다운로드 ── */
   function downloadCSV() {
     var q    = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
     var rows = filter(data[currentTab], q);
@@ -366,7 +478,7 @@
     URL.revokeObjectURL(url);
   }
 
-  /* Google Sheets 연동 안내 */
+  /* ── Google Sheets 연동 안내 ── */
   function openSheets() {
     var base = location.origin + '/api/export';
     document.getElementById('sheet-url-members').textContent  = '=IMPORTDATA("' + base + '?table=members")';
