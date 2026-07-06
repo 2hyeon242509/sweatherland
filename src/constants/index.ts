@@ -118,3 +118,49 @@ export const MISSIONS: Mission[] = [
   { id: 'm8', label: '오늘 감사한 것 1가지', emoji: '🙏', points: 5,  stat: 'calm' },
   { id: 'm9', label: '방 환기 시키기',       emoji: '🌬️', points: 5,  stat: 'care' },
 ];
+
+/** 전체 미션 풀 — 기존 9개 + 신규 19개 = 28개 */
+export const MISSION_POOL: Mission[] = [
+  ...MISSIONS,
+  // 사회적 교류
+  { id: 'ms1', label: '가족에게 문자 보내기',     emoji: '📱', points: 10, stat: 'connect' },
+  { id: 'ms2', label: '친구와 외출하기',          emoji: '👫', points: 15, stat: 'connect' },
+  // 신체 활동
+  { id: 'mb1', label: '짧은 산책하기',            emoji: '👟', points: 10, stat: 'vitality' },
+  { id: 'mb2', label: '온라인 요가 수강하기',     emoji: '🧎', points: 10, stat: 'vitality' },
+  { id: 'mb3', label: '헬스장 가기',              emoji: '🏋', points: 15, stat: 'vitality' },
+  // 야외 활동
+  { id: 'mo1', label: '공원 벤치에서 꽃구경하기', emoji: '🌸', points: 10, stat: 'calm' },
+  { id: 'mo2', label: '낚시하기',                 emoji: '🎣', points: 10, stat: 'calm' },
+  { id: 'mo3', label: '자전거 타기',              emoji: '🚴', points: 10, stat: 'vitality' },
+  { id: 'mo4', label: '축구하기',                 emoji: '⚽', points: 10, stat: 'vitality' },
+  // 동물과 함께
+  { id: 'ma1', label: '강아지와 산책하기',        emoji: '🐕', points: 10, stat: 'connect' },
+  { id: 'ma2', label: '고양이와 놀기',            emoji: '🐈', points: 5,  stat: 'care' },
+  { id: 'ma3', label: '공원에서 새 관찰하기',     emoji: '🐦', points: 5,  stat: 'calm' },
+  // 예술·창의
+  { id: 'mc1', label: '새로운 레시피로 요리하기', emoji: '🍳', points: 10, stat: 'creative' },
+  { id: 'mc2', label: '집 꾸미기',               emoji: '🏠', points: 5,  stat: 'creative' },
+  { id: 'mc3', label: '그림 그리기',             emoji: '🎨', points: 10, stat: 'creative' },
+  { id: 'mc4', label: '노래 부르기',             emoji: '🎤', points: 5,  stat: 'creative' },
+  { id: 'mc5', label: '기타 연주하기',           emoji: '🎸', points: 10, stat: 'creative' },
+  // 자기 돌봄
+  { id: 'msc1', label: '음악 듣기',              emoji: '🎧', points: 5,  stat: 'care' },
+  { id: 'msc2', label: '좋아하는 책 읽기',       emoji: '📚', points: 10, stat: 'care' },
+];
+
+/** 날짜 시드 기반으로 오늘의 서버 미션 5개 뽑기 */
+export function getDailyServerMissions(dateStr: string, count = 5): Mission[] {
+  let seed = 0;
+  for (let i = 0; i < dateStr.length; i++) {
+    seed = ((seed * 31 + dateStr.charCodeAt(i)) & 0xffffffff) >>> 0;
+  }
+  const pool = [...MISSION_POOL];
+  const result: Mission[] = [];
+  while (result.length < count && pool.length > 0) {
+    seed = ((seed * 1664525 + 1013904223) & 0xffffffff) >>> 0;
+    const idx = seed % pool.length;
+    result.push(pool.splice(idx, 1)[0]);
+  }
+  return result;
+}

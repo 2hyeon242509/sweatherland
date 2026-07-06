@@ -64,7 +64,7 @@ type AuthState = 'loading' | 'login' | 'register' | 'app';
 
 // ── 앱 본체 ───────────────────────────────────────────────────
 function AppContent() {
-  const { setCharacterName, setProfileEmoji } = useGame();
+  const { setCharacterName, setProfileEmoji, initUserData } = useGame();
   const [auth, setAuth] = useState<AuthState>('loading');
 
   const handleLogout = () => setAuth('login');
@@ -83,6 +83,16 @@ function AppContent() {
             if (data) {
               setCharacterName(data.username);
               setProfileEmoji(data.emoji || '🐱');
+              try {
+                const { loadUserGameData } = await import('./src/lib/supabase');
+                const gd = await loadUserGameData(data.username);
+                initUserData({
+                  username:    data.username,
+                  sweatPoints: gd?.sweatPoints ?? 0,
+                  statusMsg:   gd?.statusMsg   ?? '',
+                  friendCode:  gd?.friendCode  ?? '',
+                });
+              } catch {}
               setAuth('app');
               return;
             }
@@ -118,12 +128,30 @@ function AppContent() {
   const handleLogin = (profile: UserProfile) => {
     setCharacterName(profile.username);
     setProfileEmoji(profile.emoji);
+    (async () => {
+      try {
+        const { loadUserGameData } = await import('./src/lib/supabase');
+        const gd = await loadUserGameData(profile.username);
+        initUserData({
+          username:    profile.username,
+          sweatPoints: gd?.sweatPoints ?? 0,
+          statusMsg:   gd?.statusMsg   ?? '',
+          friendCode:  gd?.friendCode  ?? '',
+        });
+      } catch {}
+    })();
     setAuth('app');
   };
 
   const handleRegisterComplete = (profile: UserProfile) => {
     setCharacterName(profile.username);
     setProfileEmoji(profile.emoji);
+    initUserData({
+      username:    profile.username,
+      sweatPoints: 0,
+      statusMsg:   '',
+      friendCode:  profile.friendCode ?? '',
+    });
     setAuth('app');
   };
 

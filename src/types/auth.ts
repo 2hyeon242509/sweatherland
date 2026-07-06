@@ -7,4 +7,5 @@ export interface UserProfile {
   phone:       string;   // 전화번호
   consentDate: string;   // 동의 일시 (ISO)
   createdAt:   string;   // 계정 생성 일시 (ISO)
+  friendCode?: string;   // 4자리 친구 코드
 }

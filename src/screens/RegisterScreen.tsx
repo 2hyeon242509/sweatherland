@@ -133,6 +133,7 @@ export default function RegisterScreen({ onComplete, onBack }: Props) {
   ═══════════════════════════════════════════ */
   async function handleComplete() {
     const now = new Date().toISOString();
+    const friendCode = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
     const profile: UserProfile = {
       username:    username.trim(),
       pin,
@@ -142,6 +143,7 @@ export default function RegisterScreen({ onComplete, onBack }: Props) {
       phone:       phone.trim(),
       consentDate: now,
       createdAt:   now,
+      friendCode,
     };
     try {
       const { registerUserProfile } = await import('../lib/supabase');
