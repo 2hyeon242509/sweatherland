@@ -118,7 +118,7 @@ function AppContent() {
       const onKey = (e: KeyboardEvent) => {
         if (e.ctrlKey && e.shiftKey && e.key === 'A') {
           e.preventDefault();
-          window.open(window.location.origin + '/#admin', '_blank');
+          window.open(window.location.origin + '/admin', '_blank');
         }
       };
       window.addEventListener('keydown', onKey);

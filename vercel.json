@@ -1,5 +1,8 @@
 {
-  "buildCommand": "npx expo export -p web --output-dir dist",
+  "buildCommand": "npx expo export -p web --output-dir dist && cp web/admin.html dist/admin.html",
   "outputDirectory": "dist",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" }
+  ]
 }
