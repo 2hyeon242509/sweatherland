@@ -30,7 +30,12 @@ export interface MoodLog {
 
 /** 감정 기록 1건 저장 */
 export async function saveMoodLog(log: Omit<MoodLog, 'id'>): Promise<void> {
-  const { error } = await supabase.from('mood_logs').insert([log]);
+  let { error } = await supabase.from('mood_logs').insert([log]);
+  if (error) {
+    // log_type 컬럼이 아직 없는 경우 해당 필드 제거 후 재시도
+    const { log_type: _removed, ...withoutType } = log as any;
+    ({ error } = await supabase.from('mood_logs').insert([withoutType]));
+  }
   if (error) throw error;
 }
 
