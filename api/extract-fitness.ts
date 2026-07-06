@@ -4,7 +4,7 @@
  */
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'];
 
 const PROMPT = `You are analyzing a fitness or health app screenshot.
 Extract ONLY these numeric values and return a single JSON object:
