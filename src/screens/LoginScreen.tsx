@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, SafeAreaView, Platform, ScrollView,
+  StyleSheet, SafeAreaView, Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,6 @@ import { Session } from '../lib/session';
 import { UserProfile } from '../types/auth';
 
 const isWeb = Platform.OS === 'web';
-const NUM   = 72;
 
 interface Props {
   onLogin:    (profile: UserProfile) => void;
@@ -20,14 +19,14 @@ interface Props {
 }
 
 export default function LoginScreen({ onLogin, onRegister }: Props) {
-  const [username,        setUsername]        = useState('');
-  const [pin,             setPin]             = useState('');
-  const [error,           setError]           = useState('');
-  const [busy,            setBusy]            = useState(false);
-  const [rememberUser,    setRememberUser]     = useState(false);
-  const submitted = useRef(false);
+  const [username,     setUsername]     = useState('');
+  const [pin,          setPin]          = useState('');
+  const [error,        setError]        = useState('');
+  const [busy,         setBusy]         = useState(false);
+  const [rememberUser, setRememberUser] = useState(false);
+  const submitted    = useRef(false);
+  const pinInputRef  = useRef<TextInput>(null);
 
-  /* 앱 시작: 기억하기 설정 + 마지막 아이디 불러오기 */
   useEffect(() => {
     (async () => {
       const remember = await AsyncStorage.getItem('@remember_username');
@@ -39,18 +38,11 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
     })();
   }, []);
 
-  /* PIN 4자리 채워지면 자동 제출 */
-  useEffect(() => {
-    if (pin.length === 4 && !submitted.current) {
-      submitted.current = true;
-      doLogin(pin);
-    }
-  }, [pin]);
-
   async function doLogin(currentPin: string) {
     if (!username.trim()) {
       setError('아이디를 먼저 입력해주세요');
-      resetPin();
+      setPin('');
+      submitted.current = false;
       return;
     }
     setBusy(true);
@@ -58,14 +50,13 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
     try {
       const { loginUserProfile } = await import('../lib/supabase');
       const user = await loginUserProfile(username.trim(), currentPin);
-
       if (!user) {
         setError('아이디 또는 PIN이 올바르지 않아요 🔐');
-        resetPin();
+        setPin('');
+        submitted.current = false;
+        setBusy(false);
         return;
       }
-
-      /* 아이디 기억하기 처리 */
       if (rememberUser) {
         await AsyncStorage.setItem('@remember_username', 'true');
         await AsyncStorage.setItem('@last_username', user.username);
@@ -73,149 +64,113 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
         await AsyncStorage.setItem('@remember_username', 'false');
         await AsyncStorage.removeItem('@last_username');
       }
-
-      /* 세션 저장 (sessionStorage on web → 창 닫으면 사라짐) */
       await Session.setItem('@active_user', user.username);
       onLogin(user);
     } catch {
       setError('오류가 발생했어요. 다시 시도해주세요.');
-      resetPin();
+      setPin('');
+      submitted.current = false;
+      setBusy(false);
     }
   }
 
-  function resetPin() {
-    setPin('');
-    setBusy(false);
-    submitted.current = false;
-  }
-
-  function handleKey(key: string) {
+  function handlePinChange(text: string) {
     if (busy) return;
+    const digits = text.replace(/\D/g, '').slice(0, 4);
+    setPin(digits);
     setError('');
     submitted.current = false;
-    if (key === '←') {
-      setPin(p => p.slice(0, -1));
-    } else if (key === '✓') {
-      if (pin.length === 4) { submitted.current = true; doLogin(pin); }
-    } else if (pin.length < 4) {
-      setPin(p => p + key);
+    if (digits.length === 4) {
+      submitted.current = true;
+      doLogin(digits);
     }
   }
-
-  const ROWS = [
-    ['1','2','3'],
-    ['4','5','6'],
-    ['7','8','9'],
-    ['←','0','✓'],
-  ];
 
   return (
     <View style={s.outer}>
       <SafeAreaView style={s.safe}>
-        <ScrollView
-          contentContainerStyle={s.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── 로고 ──────────────────────────────── */}
-          <View style={s.logoWrap}>
-            <SweatOutLogo width={190} height={112} />
-            <Text style={s.logoSub}>S.WEATHER LAND</Text>
+        {/* 로고 */}
+        <View style={s.logoWrap}>
+          <SweatOutLogo width={160} height={94} />
+          <Text style={s.logoSub}>S.WEATHER LAND</Text>
+        </View>
+
+        {/* 입력 카드 */}
+        <View style={s.card}>
+          {/* 아이디 */}
+          <Text style={s.fieldLabel}>아이디</Text>
+          <View style={s.inputRow}>
+            <Ionicons name="person-outline" size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+            <TextInput
+              style={s.textInput}
+              placeholder="아이디 입력"
+              placeholderTextColor={COLORS.border}
+              value={username}
+              onChangeText={t => { setUsername(t); setPin(''); setError(''); submitted.current = false; }}
+              autoCapitalize="none"
+              returnKeyType="next"
+              onSubmitEditing={() => pinInputRef.current?.focus()}
+            />
+            {username.length > 0 && (
+              <TouchableOpacity onPress={() => { setUsername(''); setPin(''); setError(''); }} activeOpacity={0.7}>
+                <Ionicons name="close-circle" size={16} color={COLORS.border} />
+              </TouchableOpacity>
+            )}
           </View>
 
-          {/* ── 입력 카드 ─────────────────────────── */}
-          <View style={s.card}>
-            {/* 아이디 */}
-            <Text style={s.fieldLabel}>아이디</Text>
-            <View style={s.inputRow}>
-              <Ionicons name="person-outline" size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
-              <TextInput
-                style={s.textInput}
-                placeholder="아이디 입력"
-                placeholderTextColor={COLORS.border}
-                value={username}
-                onChangeText={t => { setUsername(t); resetPin(); setError(''); }}
-                autoCapitalize="none"
-                returnKeyType="done"
-              />
-              {username.length > 0 && (
-                <TouchableOpacity onPress={() => { setUsername(''); resetPin(); setError(''); }} activeOpacity={0.7}>
-                  <Ionicons name="close-circle" size={16} color={COLORS.border} />
-                </TouchableOpacity>
-              )}
+          {/* 아이디 기억하기 */}
+          <TouchableOpacity style={s.checkRow} onPress={() => setRememberUser(v => !v)} activeOpacity={0.7}>
+            <View style={[s.checkbox, rememberUser && s.checkboxOn]}>
+              {rememberUser && <Ionicons name="checkmark" size={12} color="#FFF" />}
             </View>
+            <Text style={s.checkLabel}>아이디 기억하기</Text>
+          </TouchableOpacity>
 
-            {/* 아이디 기억하기 */}
-            <TouchableOpacity
-              style={s.checkRow}
-              onPress={() => setRememberUser(v => !v)}
-              activeOpacity={0.7}
-            >
-              <View style={[s.checkbox, rememberUser && s.checkboxOn]}>
-                {rememberUser && <Ionicons name="checkmark" size={12} color="#FFF" />}
-              </View>
-              <Text style={s.checkLabel}>아이디 기억하기</Text>
-            </TouchableOpacity>
+          <View style={s.divider} />
 
-            <View style={s.divider} />
-
-            {/* PIN 표시 */}
-            <Text style={s.fieldLabel}>PIN 번호</Text>
+          {/* PIN */}
+          <Text style={s.fieldLabel}>PIN 번호</Text>
+          <TouchableOpacity
+            style={s.pinArea}
+            onPress={() => pinInputRef.current?.focus()}
+            activeOpacity={1}
+          >
             <View style={s.pinDots}>
               {[0,1,2,3].map(i => (
                 <View key={i} style={[s.dot, i < pin.length && s.dotFilled]} />
               ))}
             </View>
-          </View>
-
-          {/* ── 에러 ──────────────────────────────── */}
-          <View style={s.errorWrap}>
-            {error ? <Text style={s.errorText}>{error}</Text> : null}
-          </View>
-
-          {/* ── 숫자 키패드 ───────────────────────── */}
-          <View style={s.numpad}>
-            {ROWS.map((row, ri) => (
-              <View key={ri} style={s.numRow}>
-                {row.map(key => (
-                  <TouchableOpacity
-                    key={key}
-                    style={[
-                      s.numKey,
-                      key === '✓' && s.numKeyOk,
-                      key === '←' && s.numKeyDel,
-                    ]}
-                    onPress={() => handleKey(key)}
-                    activeOpacity={0.7}
-                    disabled={busy}
-                  >
-                    {key === '←' ? (
-                      <Ionicons name="backspace-outline" size={22} color={COLORS.text} />
-                    ) : key === '✓' ? (
-                      <Ionicons name="checkmark" size={22} color="#FFF" />
-                    ) : (
-                      <Text style={s.numKeyText}>{key}</Text>
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
-          </View>
-
-          {/* ── 가입 링크 ─────────────────────────── */}
-          <TouchableOpacity style={s.regLink} onPress={onRegister} activeOpacity={0.7}>
-            <Text style={s.regLinkText}>
-              처음이신가요?{' '}
-              <Text style={s.regLinkBold}>가입하기 →</Text>
-            </Text>
+            <TextInput
+              ref={pinInputRef}
+              style={s.hiddenPinInput}
+              value={pin}
+              onChangeText={handlePinChange}
+              keyboardType="number-pad"
+              maxLength={4}
+              secureTextEntry
+            />
           </TouchableOpacity>
+          <Text style={s.pinHint}>PIN 칸을 탭하여 입력</Text>
+        </View>
 
-          {/* ── 제주대 로고 ───────────────────────── */}
-          <View style={s.jejuRow}>
-            <JejuLogo width={18} height={22} />
-            <Text style={s.jejuText}>제주대학교 학생 건강증진 프로젝트</Text>
-          </View>
-        </ScrollView>
+        {/* 에러 */}
+        <View style={s.errorWrap}>
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
+        </View>
+
+        {/* 가입 링크 */}
+        <TouchableOpacity style={s.regLink} onPress={onRegister} activeOpacity={0.7}>
+          <Text style={s.regLinkText}>
+            처음이신가요?{' '}
+            <Text style={s.regLinkBold}>가입하기 →</Text>
+          </Text>
+        </TouchableOpacity>
+
+        {/* 제주대 로고 */}
+        <View style={s.jejuRow}>
+          <JejuLogo width={16} height={20} />
+          <Text style={s.jejuText}>제주대학교 학생 건강증진 프로젝트</Text>
+        </View>
       </SafeAreaView>
     </View>
   );
@@ -230,85 +185,67 @@ const s = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: COLORS.bg,
-    width: isWeb ? 390 : '100%',
+    width:           isWeb ? 390 : '100%',
+    justifyContent:  'center',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
-  scroll: { paddingBottom: 36, flexGrow: 1 },
 
-  /* 로고 */
   logoWrap: {
-    alignItems: 'center', paddingTop: 44, paddingBottom: 28, gap: 6,
+    alignItems: 'center',
+    paddingBottom: 20,
+    gap: 4,
   },
   logoSub: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 2.5 },
 
-  /* 카드 */
   card: {
-    marginHorizontal: 24, borderRadius: 20, padding: 22,
+    borderRadius: 20, padding: 20,
     borderWidth: 1, borderColor: COLORS.border,
-    backgroundColor: COLORS.bg, ...SHADOW, marginBottom: 8,
+    backgroundColor: COLORS.bg, ...SHADOW, marginBottom: 6,
   },
-  fieldLabel: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 0.8, marginBottom: 10 },
+  fieldLabel: { fontSize: 11, color: COLORS.textMuted, letterSpacing: 0.8, marginBottom: 8 },
   inputRow: {
     flexDirection: 'row', alignItems: 'center',
     borderBottomWidth: 1.5, borderBottomColor: COLORS.navy, paddingBottom: 8,
   },
   textInput: {
-    flex: 1, fontSize: 18, color: COLORS.text,
+    flex: 1, fontSize: 17, color: COLORS.text,
     paddingVertical: 2, fontFamily: 'GmarketSans-Light',
   },
 
-  /* 아이디 기억하기 */
-  checkRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginTop: 12,
-  },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   checkbox: {
     width: 18, height: 18, borderRadius: 4,
     borderWidth: 1.5, borderColor: COLORS.border,
     justifyContent: 'center', alignItems: 'center',
     backgroundColor: COLORS.bg,
   },
-  checkboxOn: {
-    backgroundColor: COLORS.navy, borderColor: COLORS.navy,
-  },
+  checkboxOn: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
   checkLabel: { fontSize: 12, color: COLORS.textMuted },
 
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 18 },
+  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 14 },
 
-  pinDots: {
-    flexDirection: 'row', gap: 20, justifyContent: 'center', paddingVertical: 8,
-  },
+  pinArea: { alignItems: 'center', paddingVertical: 8 },
+  pinDots: { flexDirection: 'row', gap: 20, justifyContent: 'center' },
   dot: {
     width: 16, height: 16, borderRadius: 8,
     borderWidth: 2, borderColor: COLORS.border, backgroundColor: 'transparent',
   },
   dotFilled: { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
+  hiddenPinInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
+  pinHint: { fontSize: 11, color: COLORS.border, marginTop: 6, textAlign: 'center' },
 
-  /* 에러 */
-  errorWrap: { height: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
-  errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center', paddingHorizontal: 24 },
+  errorWrap: { height: 26, justifyContent: 'center', alignItems: 'center', marginBottom: 2 },
+  errorText: { fontSize: 13, color: '#C0392B', textAlign: 'center' },
 
-  /* 키패드 */
-  numpad: { alignSelf: 'center', gap: 10, marginBottom: 14 },
-  numRow:  { flexDirection: 'row', gap: 10 },
-  numKey: {
-    width: NUM, height: NUM, borderRadius: NUM / 2,
-    backgroundColor: COLORS.navyLight, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  numKeyOk:  { backgroundColor: COLORS.navy, borderColor: COLORS.navy },
-  numKeyDel: { backgroundColor: COLORS.bg,   borderColor: COLORS.border },
-  numKeyText: { fontSize: 22, color: COLORS.text },
-
-  /* 가입 링크 */
-  regLink:     { alignItems: 'center', paddingVertical: 12 },
+  regLink:     { alignItems: 'center', paddingVertical: 10 },
   regLinkText: { fontSize: 14, color: COLORS.textMuted },
   regLinkBold: { color: COLORS.navy, fontWeight: '700' },
 
-  /* 제주대 */
   jejuRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingTop: 14, borderTopWidth: 1, borderTopColor: COLORS.border,
-    marginHorizontal: 24, marginTop: 6,
+    gap: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border,
+    marginTop: 4,
   },
   jejuText: { fontSize: 11, color: COLORS.border },
 });
