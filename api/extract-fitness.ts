@@ -63,6 +63,13 @@ export default async function handler(req: any, res: any) {
         },
       );
 
+      if (geminiRes.status === 429) {
+        return res.status(429).json({
+          error: 'AI 인식 한도에 도달했어요. 잠시 후 다시 시도해주세요.',
+          detail: '무료 Gemini API 일일 할당량이 초과됐어요. Google AI Studio에서 결제를 활성화하거나, 내일 다시 시도해주세요.',
+        });
+      }
+
       if (!geminiRes.ok) {
         const errBody = await geminiRes.text();
         errors.push(`[${model}] ${geminiRes.status}: ${errBody.slice(0, 150)}`);
