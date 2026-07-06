@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile as AuthUserProfile } from '../types/auth';
+import { Mission, StatKey } from '../constants';
 
 export const SUPABASE_URL      = 'https://ifctmlafvrhbshdfrjxz.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_GlOZZ9Bmg45GXDdmKM_58w_7k0HI3O4';
@@ -240,8 +241,6 @@ export async function updateUserPin(username: string, newPin: string): Promise<v
 }
 
 // ── mission_pool 테이블 (관리자가 관리하는 미션 목록) ─────────────────────────
-
-import { Mission, StatKey } from '../constants';
 
 /** Supabase mission_pool에서 활성화된 미션 전체 조회 */
 export async function fetchActiveMissions(): Promise<Mission[]> {
