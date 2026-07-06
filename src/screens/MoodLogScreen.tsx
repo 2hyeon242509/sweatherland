@@ -68,10 +68,9 @@ export default function MoodLogScreen() {
         logged_at:  new Date().toISOString(), // 항상 기록 시각 포함
       };
       if (isSupabaseConfigured()) {
-        saveMoodLog(logData).catch(() => {});
-      } else {
-        saveLocalLog(logData).catch(() => {});
+        saveMoodLog({ ...logData, log_type: 'daily' }).catch(() => {});
       }
+      saveLocalLog(logData).catch(() => {}); // 달력 표시를 위해 항상 로컬에도 저장
     }
 
     navigation.goBack();

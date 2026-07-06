@@ -25,6 +25,7 @@ export interface MoodLog {
   mood_label: string;
   memo:       string;
   logged_at?: string;
+  log_type?:  string; // 'daily' | 'post_mission'
 }
 
 /** 감정 기록 1건 저장 */

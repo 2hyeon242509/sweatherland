@@ -156,6 +156,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       statusMsg:       data.statusMsg || prev.statusMsg,
       uniqueId:        data.friendCode ? '#' + data.friendCode : prev.uniqueId,
     }));
+    // 해당 유저의 오늘 완료 미션 복원 (새로고침 후 초기화 방지)
+    AsyncStorage.getItem(`@completed_missions_${data.username}`)
+      .then(raw => {
+        if (raw) setState(prev => ({ ...prev, completedMissions: JSON.parse(raw) as string[] }));
+      })
+      .catch(() => {});
   };
 
   const saveSweatToSupabase = (points: number) => {
@@ -183,11 +189,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const completeMission = (missionId: string, points: number, stat: StatKey) => {
+    const username = currentUsernameRef.current;
     setState(prev => {
       if (prev.completedMissions.includes(missionId)) return prev;
       const newCompleted = [...prev.completedMissions, missionId];
       const nextSweat = prev.sweatPoints + points;
       saveSweatToSupabase(nextSweat);
+      if (username) {
+        AsyncStorage.setItem(`@completed_missions_${username}`, JSON.stringify(newCompleted)).catch(() => {});
+      }
       return {
         ...prev,
         sweatPoints:       nextSweat,
@@ -220,6 +230,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const resetMissions = () => {
+    const username = currentUsernameRef.current;
+    if (username) {
+      AsyncStorage.removeItem(`@completed_missions_${username}`).catch(() => {});
+    }
     setState(prev => ({ ...prev, completedMissions: [] }));
   };
 
