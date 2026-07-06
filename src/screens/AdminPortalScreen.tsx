@@ -3,8 +3,6 @@
  * 접근 방법:
  *   웹 URL: https://[도메인]/#admin
  *   단축키: 앱 어디서든 Ctrl + Shift + A
- *
- * 일반 앱 내비게이션에서는 완전히 분리됨
  */
 import React, { useState } from 'react';
 import {
@@ -12,28 +10,24 @@ import {
   StyleSheet, SafeAreaView, ScrollView, Platform,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOW } from '../constants';
 import { UserProfile } from '../types/auth';
-import { loadLocalLogs } from '../lib/localLogs';
-import { MoodLog } from '../lib/supabase';
+import {
+  MoodLog, MissionLogEntry, DailyRecord,
+  fetchAllUserProfiles, fetchAllMoodLogs, fetchMissionLogs, fetchDailyRecords,
+} from '../lib/supabase';
 
-const ADMIN_PIN = '9999'; // ← 반드시 변경하세요
+const ADMIN_PIN = '9999';
 
-type Tab = 'members' | 'logs';
+type Tab = 'members' | 'moods' | 'missions' | 'daily';
 
 function fmtDate(iso: string | undefined) {
   if (!iso) return '—';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   const kst = new Date(d.getTime() + 9 * 3600 * 1000);
-  const yy = kst.getUTCFullYear();
-  const mo = String(kst.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(kst.getUTCDate()).padStart(2, '0');
-  const hh = String(kst.getUTCHours()).padStart(2, '0');
-  const mm = String(kst.getUTCMinutes()).padStart(2, '0');
-  return `${yy}-${mo}-${dd} ${hh}:${mm}`;
+  return `${kst.getUTCFullYear()}-${String(kst.getUTCMonth()+1).padStart(2,'0')}-${String(kst.getUTCDate()).padStart(2,'0')} ${String(kst.getUTCHours()).padStart(2,'0')}:${String(kst.getUTCMinutes()).padStart(2,'0')}`;
 }
 
 function downloadCSV(filename: string, header: string[], rows: string[][]) {
@@ -45,107 +39,97 @@ function downloadCSV(filename: string, header: string[], rows: string[][]) {
   const blob = new Blob([BOM + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href     = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 export default function AdminPortalScreen() {
-  const [pin,    setPin]    = useState('');
-  const [authed, setAuthed] = useState(false);
-  const [error,  setError]  = useState('');
-  const [tab,    setTab]    = useState<Tab>('members');
+  const [pin,     setPinVal] = useState('');
+  const [authed,  setAuthed] = useState(false);
+  const [error,   setError]  = useState('');
+  const [tab,     setTab]    = useState<Tab>('members');
   const [loading, setLoading] = useState(false);
 
-  const [members, setMembers] = useState<UserProfile[]>([]);
-  const [logs,    setLogs]    = useState<MoodLog[]>([]);
-  const [search,  setSearch]  = useState('');
+  const [members,  setMembers]  = useState<UserProfile[]>([]);
+  const [moods,    setMoods]    = useState<MoodLog[]>([]);
+  const [missions, setMissions] = useState<MissionLogEntry[]>([]);
+  const [daily,    setDaily]    = useState<DailyRecord[]>([]);
+  const [search,   setSearch]   = useState('');
+
+  async function loadAll() {
+    const [m, mo, mi, d] = await Promise.all([
+      fetchAllUserProfiles(),
+      fetchAllMoodLogs(),
+      fetchMissionLogs(),
+      fetchDailyRecords(),
+    ]);
+    setMembers(m); setMoods(mo); setMissions(mi); setDaily(d);
+  }
 
   async function handleLogin() {
-    if (pin !== ADMIN_PIN) { setError('PIN이 올바르지 않아요'); setPin(''); return; }
+    if (pin !== ADMIN_PIN) { setError('PIN이 올바르지 않아요'); setPinVal(''); return; }
     setLoading(true);
     try {
-      const { fetchAllUserProfiles } = await import('../lib/supabase');
-      const [fetchedMembers, fetchedLogs] = await Promise.all([
-        fetchAllUserProfiles(),
-        loadLocalLogs(),
-      ]);
-      setMembers(fetchedMembers);
-      setLogs(fetchedLogs);
+      await loadAll();
       setAuthed(true);
     } catch (e: any) {
-      setError('데이터 불러오기 오류: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
+      setError('데이터 오류: ' + e.message);
+    } finally { setLoading(false); }
   }
 
   async function handleRefresh() {
     setLoading(true);
-    try {
-      const { fetchAllUserProfiles } = await import('../lib/supabase');
-      const [fetchedMembers, fetchedLogs] = await Promise.all([
-        fetchAllUserProfiles(),
-        loadLocalLogs(),
-      ]);
-      setMembers(fetchedMembers);
-      setLogs(fetchedLogs);
-    } catch {}
+    try { await loadAll(); } catch {}
     setLoading(false);
   }
 
-  /* ── 검색 필터 ──────────────────────────── */
   const q = search.toLowerCase();
-  const filteredMembers = q
-    ? members.filter(m =>
-        m.username.toLowerCase().includes(q) ||
-        m.realName?.toLowerCase().includes(q) ||
-        m.studentId?.includes(q) ||
-        m.phone?.includes(q))
-    : members;
 
-  const filteredLogs = q
-    ? logs.filter(l =>
-        l.user_name?.toLowerCase().includes(q) ||
-        l.mood_label?.toLowerCase().includes(q) ||
-        (l.memo ?? '').toLowerCase().includes(q))
-    : logs;
+  const filteredMembers  = q ? members.filter(m =>
+    m.username.toLowerCase().includes(q) || (m.realName ?? '').toLowerCase().includes(q) || (m.studentId ?? '').includes(q)
+  ) : members;
 
-  /* ── 엑셀 다운로드 ──────────────────────── */
-  function exportMembers() {
-    downloadCSV(
-      `sweatherland_members_${new Date().toISOString().slice(0,10)}.csv`,
-      ['번호','아이디','본명','학번','전화번호','이모지','가입일시','동의일시'],
-      filteredMembers.map((m, i) => [
-        String(i + 1),
-        m.username,
-        m.realName   ?? '',
-        m.studentId  ?? '',
-        m.phone      ?? '',
-        m.emoji      ?? '',
-        fmtDate(m.createdAt),
-        fmtDate(m.consentDate),
-      ]),
-    );
+  const filteredMoods = q ? moods.filter(l =>
+    (l.user_name ?? '').toLowerCase().includes(q) || (l.mood_label ?? '').toLowerCase().includes(q)
+  ) : moods;
+
+  const filteredMissions = q ? missions.filter(m =>
+    (m.username ?? '').toLowerCase().includes(q) || (m.mission_label ?? '').toLowerCase().includes(q)
+  ) : missions;
+
+  const filteredDaily = q ? daily.filter(d =>
+    (d.username ?? '').toLowerCase().includes(q) || (d.record_date ?? '').includes(q)
+  ) : daily;
+
+  function exportCurrent() {
+    const d = new Date().toISOString().slice(0, 10);
+    if (tab === 'members') {
+      downloadCSV(`members_${d}.csv`,
+        ['번호','아이디','본명','학번','전화번호','이모지','스웨트','가입일'],
+        filteredMembers.map((m, i) => [String(i+1), m.username, m.realName??'', m.studentId??'', m.phone??'', m.emoji??'', '', fmtDate(m.createdAt)]));
+    } else if (tab === 'moods') {
+      downloadCSV(`moods_${d}.csv`,
+        ['번호','사용자','감정','메모','기록일시'],
+        filteredMoods.map((l, i) => [String(i+1), l.user_name, l.mood_label, l.memo??'', fmtDate(l.logged_at)]));
+    } else if (tab === 'missions') {
+      downloadCSV(`missions_${d}.csv`,
+        ['번호','사용자','미션','타입','포인트','스탯','완료일시'],
+        filteredMissions.map((m, i) => [String(i+1), m.username, m.mission_label, m.mission_type, String(m.points), m.stat, fmtDate(m.logged_at)]));
+    } else {
+      downloadCSV(`daily_${d}.csv`,
+        ['번호','사용자','날짜','미션완료','에너지100','완료수'],
+        filteredDaily.map((d, i) => [String(i+1), d.username, d.record_date, d.all_missions_done?'O':'X', d.energy_100?'O':'X', String(d.missions_completed)]));
+    }
   }
 
-  function exportLogs() {
-    downloadCSV(
-      `sweatherland_moodlogs_${new Date().toISOString().slice(0,10)}.csv`,
-      ['번호','사용자','감정ID','감정','메모','기록일시(KST)'],
-      filteredLogs.map((l, i) => [
-        String(i + 1),
-        l.user_name,
-        l.mood_id,
-        l.mood_label,
-        l.memo ?? '',
-        fmtDate(l.logged_at),
-      ]),
-    );
-  }
+  // 통계 계산
+  const activeUsers      = new Set(moods.map(l => l.user_name)).size;
+  const missionUsers     = new Set(missions.map(m => m.username)).size;
+  const fullDays         = daily.filter(d => d.all_missions_done).length;
+  const avgMissionsPerUser = missionUsers > 0
+    ? Math.round(missions.length / missionUsers)
+    : 0;
 
   /* ─── PIN 화면 ─────────────────────────── */
   if (!authed) {
@@ -154,11 +138,11 @@ export default function AdminPortalScreen() {
         <View style={p.loginCard}>
           <Text style={p.lockIcon}>🔒</Text>
           <Text style={p.loginTitle}>관리자 포털</Text>
-          <Text style={p.loginSub}>S.WEATHER LAND 운영진 전용</Text>
+          <Text style={p.loginSub}>S.WEATHER LAND Admin</Text>
           <TextInput
             style={p.pinInput}
             value={pin}
-            onChangeText={t => { setPin(t); setError(''); }}
+            onChangeText={t => { setPinVal(t); setError(''); }}
             placeholder="관리자 PIN"
             placeholderTextColor="#aaa"
             secureTextEntry
@@ -174,18 +158,11 @@ export default function AdminPortalScreen() {
             disabled={loading}
             activeOpacity={0.85}
           >
-            {loading
-              ? <ActivityIndicator color="#FFF" />
-              : <Text style={p.loginBtnText}>접속하기</Text>}
+            {loading ? <ActivityIndicator color="#FFF" /> : <Text style={p.loginBtnText}>접속하기</Text>}
           </TouchableOpacity>
           <TouchableOpacity
             style={p.backBtn}
-            onPress={() => {
-              if (Platform.OS === 'web') {
-                window.location.hash = '';
-                window.location.reload();
-              }
-            }}
+            onPress={() => { if (Platform.OS === 'web') { window.location.hash = ''; window.location.reload(); } }}
             activeOpacity={0.7}
           >
             <Text style={p.backBtnText}>← 앱으로 돌아가기</Text>
@@ -199,6 +176,7 @@ export default function AdminPortalScreen() {
   return (
     <View style={p.wrap}>
       <SafeAreaView style={{ flex: 1, width: '100%' }}>
+
         {/* ── 헤더 ──────────────────────── */}
         <View style={p.header}>
           <View>
@@ -212,12 +190,7 @@ export default function AdminPortalScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={p.exitBtn}
-              onPress={() => {
-                if (Platform.OS === 'web') {
-                  window.location.hash = '';
-                  window.location.reload();
-                }
-              }}
+              onPress={() => { if (Platform.OS === 'web') { window.location.hash = ''; window.location.reload(); } }}
               activeOpacity={0.7}
             >
               <Text style={p.exitBtnText}>나가기</Text>
@@ -226,35 +199,35 @@ export default function AdminPortalScreen() {
         </View>
 
         {/* ── 통계 ──────────────────────── */}
-        <View style={p.statsRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, borderBottomWidth: 1, borderBottomColor: '#E0E0E0', backgroundColor: '#FFF' }} contentContainerStyle={p.statsRow}>
           <StatChip label="총 회원" value={members.length} />
-          <StatChip label="감정 기록" value={logs.length} />
-          <StatChip label="활동 사용자" value={new Set(logs.map(l => l.user_name)).size} />
-        </View>
+          <StatChip label="감정 기록" value={moods.length} />
+          <StatChip label="미션 완료" value={missions.length} />
+          <StatChip label="배터리 충전일" value={fullDays} />
+          <StatChip label="활동 회원" value={Math.max(activeUsers, missionUsers)} />
+          <StatChip label="인당 미션" value={avgMissionsPerUser} />
+        </ScrollView>
 
         {/* ── 탭 ────────────────────────── */}
-        <View style={p.tabRow}>
-          <TouchableOpacity
-            style={[p.tab, tab === 'members' && p.tabActive]}
-            onPress={() => { setTab('members'); setSearch(''); }}
-            activeOpacity={0.7}
-          >
-            <Text style={[p.tabText, tab === 'members' && p.tabTextActive]}>
-              👥 회원 명단 ({members.length})
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[p.tab, tab === 'logs' && p.tabActive]}
-            onPress={() => { setTab('logs'); setSearch(''); }}
-            activeOpacity={0.7}
-          >
-            <Text style={[p.tabText, tab === 'logs' && p.tabTextActive]}>
-              📔 감정 기록 ({logs.length})
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E0E0E0' }} contentContainerStyle={p.tabRow}>
+          {([
+            { key: 'members',  label: `👥 회원 (${members.length})` },
+            { key: 'moods',    label: `💭 감정 (${moods.length})` },
+            { key: 'missions', label: `✅ 미션 (${missions.length})` },
+            { key: 'daily',    label: `📅 일별 (${daily.length})` },
+          ] as const).map(t => (
+            <TouchableOpacity
+              key={t.key}
+              style={[p.tab, tab === t.key && p.tabActive]}
+              onPress={() => { setTab(t.key); setSearch(''); }}
+              activeOpacity={0.7}
+            >
+              <Text style={[p.tabText, tab === t.key && p.tabTextActive]}>{t.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        {/* ── 검색 + 엑셀 ───────────────── */}
+        {/* ── 검색 + 다운로드 ───────────── */}
         <View style={p.toolRow}>
           <View style={p.searchBox}>
             <Ionicons name="search" size={14} color="#aaa" style={{ marginRight: 6 }} />
@@ -266,61 +239,105 @@ export default function AdminPortalScreen() {
               onChangeText={setSearch}
             />
           </View>
-          <TouchableOpacity
-            style={p.dlBtn}
-            onPress={tab === 'members' ? exportMembers : exportLogs}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={p.dlBtn} onPress={exportCurrent} activeOpacity={0.7}>
             <Ionicons name="download-outline" size={15} color="#FFF" />
-            <Text style={p.dlBtnText}>CSV 다운로드</Text>
+            <Text style={p.dlBtnText}>CSV</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── 테이블 ────────────────────── */}
+        {/* ── 회원 명단 ─────────────────── */}
         {tab === 'members' && (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* 헤더 */}
             <View style={p.tableHead}>
-              {['#','아이디','본명','학번','전화번호','이모지','가입일'].map((h, i) => (
-                <Text key={i} style={[p.th, i === 0 && { flex: 0.4 }, i === 2 && { flex: 1.2 }]}>{h}</Text>
+              {['#','아이디','본명','학번','이모지','가입일'].map((h, i) => (
+                <Text key={i} style={[p.th, i===0&&{flex:0.4}]}>{h}</Text>
               ))}
             </View>
-            {filteredMembers.length === 0 ? (
-              <Text style={p.empty}>회원이 없습니다.</Text>
-            ) : filteredMembers.map((m, i) => (
-              <View key={m.username} style={[p.row, i % 2 === 0 && p.rowAlt]}>
-                <Text style={[p.td, { flex: 0.4 }]}>{i + 1}</Text>
-                <Text style={p.td} numberOfLines={1}>{m.username}</Text>
-                <Text style={[p.td, { flex: 1.2 }]} numberOfLines={1}>{m.realName ?? '—'}</Text>
-                <Text style={p.td} numberOfLines={1}>{m.studentId ?? '—'}</Text>
-                <Text style={p.td} numberOfLines={1}>{m.phone ?? '—'}</Text>
-                <Text style={p.td}>{m.emoji ?? '—'}</Text>
-                <Text style={p.td} numberOfLines={1}>{fmtDate(m.createdAt)}</Text>
-              </View>
-            ))}
+            {filteredMembers.length === 0
+              ? <Text style={p.empty}>회원이 없습니다.</Text>
+              : filteredMembers.map((m, i) => (
+                <View key={m.username} style={[p.row, i%2===0&&p.rowAlt]}>
+                  <Text style={[p.td,{flex:0.4}]}>{i+1}</Text>
+                  <Text style={p.td} numberOfLines={1}>{m.username}</Text>
+                  <Text style={p.td} numberOfLines={1}>{m.realName??'—'}</Text>
+                  <Text style={p.td} numberOfLines={1}>{m.studentId??'—'}</Text>
+                  <Text style={p.td}>{m.emoji??'—'}</Text>
+                  <Text style={p.td} numberOfLines={1}>{fmtDate(m.createdAt)}</Text>
+                </View>
+              ))}
           </ScrollView>
         )}
 
-        {tab === 'logs' && (
+        {/* ── 감정 기록 ─────────────────── */}
+        {tab === 'moods' && (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
             <View style={p.tableHead}>
-              {['#','사용자','감정','메모','기록일시(KST)'].map((h, i) => (
-                <Text key={i} style={[p.th, i === 0 && { flex: 0.4 }, i === 3 && { flex: 2 }]}>{h}</Text>
+              {['#','사용자','감정','메모','기록일시'].map((h, i) => (
+                <Text key={i} style={[p.th, i===0&&{flex:0.4}, i===3&&{flex:2}]}>{h}</Text>
               ))}
             </View>
-            {filteredLogs.length === 0 ? (
-              <Text style={p.empty}>기록이 없습니다.</Text>
-            ) : filteredLogs.map((l, i) => (
-              <View key={l.id ?? i} style={[p.row, i % 2 === 0 && p.rowAlt]}>
-                <Text style={[p.td, { flex: 0.4 }]}>{i + 1}</Text>
-                <Text style={p.td} numberOfLines={1}>{l.user_name}</Text>
-                <Text style={p.td} numberOfLines={1}>{l.mood_label}</Text>
-                <Text style={[p.td, { flex: 2, color: '#666' }]} numberOfLines={2}>{l.memo || '—'}</Text>
-                <Text style={p.td} numberOfLines={2}>{fmtDate(l.logged_at)}</Text>
-              </View>
-            ))}
+            {filteredMoods.length === 0
+              ? <Text style={p.empty}>기록이 없습니다.</Text>
+              : filteredMoods.map((l, i) => (
+                <View key={l.id??i} style={[p.row, i%2===0&&p.rowAlt]}>
+                  <Text style={[p.td,{flex:0.4}]}>{i+1}</Text>
+                  <Text style={p.td} numberOfLines={1}>{l.user_name}</Text>
+                  <Text style={p.td} numberOfLines={1}>{l.mood_label}</Text>
+                  <Text style={[p.td,{flex:2,color:'#666'}]} numberOfLines={2}>{l.memo||'—'}</Text>
+                  <Text style={p.td} numberOfLines={1}>{fmtDate(l.logged_at)}</Text>
+                </View>
+              ))}
           </ScrollView>
         )}
+
+        {/* ── 미션 기록 ─────────────────── */}
+        {tab === 'missions' && (
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+            <View style={p.tableHead}>
+              {['#','사용자','미션','타입','💧','완료일시'].map((h, i) => (
+                <Text key={i} style={[p.th, i===0&&{flex:0.4}, i===2&&{flex:1.8}]}>{h}</Text>
+              ))}
+            </View>
+            {filteredMissions.length === 0
+              ? <Text style={p.empty}>미션 기록이 없습니다.{'\n'}(Supabase에 mission_logs 테이블이 필요해요)</Text>
+              : filteredMissions.map((m, i) => (
+                <View key={m.id??i} style={[p.row, i%2===0&&p.rowAlt]}>
+                  <Text style={[p.td,{flex:0.4}]}>{i+1}</Text>
+                  <Text style={p.td} numberOfLines={1}>{m.username}</Text>
+                  <Text style={[p.td,{flex:1.8}]} numberOfLines={1}>{m.mission_label}</Text>
+                  <Text style={[p.td,{color: m.mission_type==='custom'?COLORS.navy:'#666'}]} numberOfLines={1}>
+                    {m.mission_type==='custom'?'나만의':'추천'}
+                  </Text>
+                  <Text style={p.td}>{m.points}</Text>
+                  <Text style={p.td} numberOfLines={1}>{fmtDate(m.logged_at)}</Text>
+                </View>
+              ))}
+          </ScrollView>
+        )}
+
+        {/* ── 일별 활동 ─────────────────── */}
+        {tab === 'daily' && (
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 40 }}>
+            <View style={p.tableHead}>
+              {['#','사용자','날짜','미션완료','에너지100','완료수'].map((h, i) => (
+                <Text key={i} style={[p.th, i===0&&{flex:0.4}]}>{h}</Text>
+              ))}
+            </View>
+            {filteredDaily.length === 0
+              ? <Text style={p.empty}>일별 기록이 없습니다.{'\n'}(Supabase에 daily_records 테이블이 필요해요)</Text>
+              : filteredDaily.map((d, i) => (
+                <View key={d.id??i} style={[p.row, i%2===0&&p.rowAlt]}>
+                  <Text style={[p.td,{flex:0.4}]}>{i+1}</Text>
+                  <Text style={p.td} numberOfLines={1}>{d.username}</Text>
+                  <Text style={p.td}>{d.record_date}</Text>
+                  <Text style={[p.td,{color:d.all_missions_done?'#27AE60':'#aaa',fontWeight:'700'}]}>{d.all_missions_done?'✅':'—'}</Text>
+                  <Text style={[p.td,{color:d.energy_100?COLORS.navy:'#aaa',fontWeight:'700'}]}>{d.energy_100?'💯':'—'}</Text>
+                  <Text style={p.td}>{d.missions_completed}</Text>
+                </View>
+              ))}
+          </ScrollView>
+        )}
+
       </SafeAreaView>
     </View>
   );
@@ -336,16 +353,11 @@ function StatChip({ label, value }: { label: string; value: number }) {
 }
 
 const p = StyleSheet.create({
-  wrap: {
-    flex: 1, backgroundColor: '#F0F2F5',
-    alignItems: 'center',
-  },
+  wrap: { flex: 1, backgroundColor: '#F0F2F5', alignItems: 'center' },
 
-  /* 로그인 */
   loginCard: {
     backgroundColor: '#FFF', borderRadius: 20, padding: 36,
-    alignItems: 'center', gap: 12, marginTop: 80,
-    width: 380, ...SHADOW,
+    alignItems: 'center', gap: 12, marginTop: 80, width: 380, ...SHADOW,
   },
   lockIcon:    { fontSize: 52 },
   loginTitle:  { fontSize: 22, fontWeight: '800', color: COLORS.text },
@@ -355,67 +367,51 @@ const p = StyleSheet.create({
     padding: 16, fontSize: 20, textAlign: 'center', letterSpacing: 8,
     color: COLORS.text, borderWidth: 1, borderColor: '#E0E0E0',
   },
-  errText: { fontSize: 13, color: '#C0392B' },
+  errText:      { fontSize: 13, color: '#C0392B' },
   loginBtn: {
     width: '100%', backgroundColor: COLORS.navy, borderRadius: 12,
     paddingVertical: 15, alignItems: 'center',
   },
   loginBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  backBtn: { paddingVertical: 8 },
-  backBtnText: { fontSize: 13, color: '#888' },
+  backBtn:      { paddingVertical: 8 },
+  backBtnText:  { fontSize: 13, color: '#888' },
 
-  /* 헤더 */
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 14,
-    backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
-    width: '100%',
+    backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%',
   },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: COLORS.text },
-  headerSub:   { fontSize: 11, color: '#888' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerTitle:  { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  headerSub:    { fontSize: 11, color: '#888' },
+  headerRight:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
   refreshBtn: {
     width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.navyLight,
     justifyContent: 'center', alignItems: 'center',
   },
-  exitBtn: {
-    backgroundColor: '#EEE', borderRadius: 8,
-    paddingHorizontal: 14, paddingVertical: 7,
-  },
+  exitBtn: { backgroundColor: '#EEE', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 7 },
   exitBtnText: { fontSize: 13, color: '#555' },
 
-  /* 통계 */
-  statsRow: {
-    flexDirection: 'row', gap: 10, paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: '#FFF', borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
-    width: '100%',
-  },
+  statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 10 },
   statChip: {
-    flex: 1, backgroundColor: COLORS.navyLight, borderRadius: 12,
-    paddingVertical: 10, alignItems: 'center',
+    backgroundColor: COLORS.navyLight, borderRadius: 12,
+    paddingVertical: 10, paddingHorizontal: 14, alignItems: 'center', minWidth: 80,
   },
-  statNum:   { fontSize: 22, fontWeight: '800', color: COLORS.navy },
-  statLabel: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  statNum:   { fontSize: 20, fontWeight: '800', color: COLORS.navy },
+  statLabel: { fontSize: 10, color: COLORS.textMuted, marginTop: 2 },
 
-  /* 탭 */
-  tabRow: {
-    flexDirection: 'row', backgroundColor: '#FFF',
-    borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%',
-  },
+  tabRow: { flexDirection: 'row', paddingHorizontal: 4 },
   tab: {
-    flex: 1, paddingVertical: 12, alignItems: 'center',
+    paddingVertical: 12, paddingHorizontal: 16,
     borderBottomWidth: 2, borderBottomColor: 'transparent',
   },
   tabActive:     { borderBottomColor: COLORS.navy },
   tabText:       { fontSize: 13, color: '#888' },
   tabTextActive: { color: COLORS.navy, fontWeight: '700' },
 
-  /* 도구 행 */
   toolRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: '#F8F8F8', borderBottomWidth: 1, borderBottomColor: '#E0E0E0',
-    width: '100%',
+    backgroundColor: '#F8F8F8', borderBottomWidth: 1, borderBottomColor: '#E0E0E0', width: '100%',
   },
   searchBox: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
@@ -429,21 +425,17 @@ const p = StyleSheet.create({
   },
   dlBtnText: { fontSize: 12, fontWeight: '700', color: '#FFF' },
 
-  /* 테이블 */
   tableHead: {
     flexDirection: 'row', backgroundColor: COLORS.navyLight,
     paddingHorizontal: 16, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
-    width: '100%',
+    borderBottomWidth: 1, borderBottomColor: COLORS.border, width: '100%',
   },
-  th: { flex: 1, fontSize: 11, fontWeight: '700', color: COLORS.navy, paddingRight: 4 },
+  th:  { flex: 1, fontSize: 11, fontWeight: '700', color: COLORS.navy, paddingRight: 4 },
   row: {
     flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10,
     borderBottomWidth: 1, borderBottomColor: '#F0F0F0', width: '100%',
   },
   rowAlt: { backgroundColor: '#FAFAFA' },
-  td: { flex: 1, fontSize: 12, color: COLORS.text, paddingRight: 6 },
-  empty: {
-    textAlign: 'center', color: '#888', fontSize: 14, paddingTop: 60,
-  },
+  td:     { flex: 1, fontSize: 12, color: COLORS.text, paddingRight: 6 },
+  empty:  { textAlign: 'center', color: '#888', fontSize: 13, paddingTop: 60, lineHeight: 22 },
 });

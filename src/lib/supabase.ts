@@ -207,3 +207,57 @@ export async function updateUserPin(username: string, newPin: string): Promise<v
     .eq('username', username);
   if (error) throw error;
 }
+
+// ── mission_logs 테이블 ───────────────────────────────────────────────────────
+
+export interface MissionLogEntry {
+  id?:            number;
+  username:       string;
+  mission_id:     string;
+  mission_label:  string;
+  mission_type:   string; // 'custom' | 'server'
+  points:         number;
+  stat:           string;
+  logged_at?:     string;
+}
+
+export async function saveMissionLog(entry: Omit<MissionLogEntry, 'id'>): Promise<void> {
+  const { error } = await supabase.from('mission_logs').insert([entry]);
+  if (error) throw error;
+}
+
+export async function fetchMissionLogs(username?: string): Promise<MissionLogEntry[]> {
+  let q = supabase.from('mission_logs').select('*').order('logged_at', { ascending: false });
+  if (username) q = q.eq('username', username);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as MissionLogEntry[];
+}
+
+// ── daily_records 테이블 ─────────────────────────────────────────────────────
+
+export interface DailyRecord {
+  id?:                number;
+  username:           string;
+  record_date:        string; // YYYY-MM-DD KST
+  all_missions_done:  boolean;
+  energy_100:         boolean;
+  missions_completed: number;
+  updated_at?:        string;
+}
+
+export async function upsertDailyRecord(record: Omit<DailyRecord, 'id' | 'updated_at'>): Promise<void> {
+  const now = new Date(Date.now() + 9 * 3600 * 1000).toISOString();
+  const { error } = await supabase
+    .from('daily_records')
+    .upsert([{ ...record, updated_at: now }], { onConflict: 'username,record_date' });
+  if (error) throw error;
+}
+
+export async function fetchDailyRecords(username?: string): Promise<DailyRecord[]> {
+  let q = supabase.from('daily_records').select('*').order('record_date', { ascending: false });
+  if (username) q = q.eq('username', username);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as DailyRecord[];
+}

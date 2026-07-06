@@ -112,7 +112,7 @@ export default function MissionScreen() {
   const navigation = useNavigation();
   const {
     completedMissions, completeMission, resetMissions,
-    sweatPoints, addEnergy, recordAllMissionsToday,
+    sweatPoints, addEnergy, recordAllMissionsToday, currentUsername,
   } = useGame();
 
   const today = getTodayKST();
@@ -230,6 +230,23 @@ export default function MissionScreen() {
     if (!confirmTarget) return;
     completeMission(confirmTarget.id, confirmTarget.points, confirmTarget.stat);
     setConfirmTarget(null);
+
+    // Supabase에 미션 기록
+    if (currentUsername) {
+      const missionType = confirmTarget.id.startsWith('custom') ? 'custom' : 'server';
+      import('../lib/supabase').then(({ saveMissionLog }) => {
+        saveMissionLog({
+          username:      currentUsername,
+          mission_id:    confirmTarget.id,
+          mission_label: confirmTarget.label,
+          mission_type:  missionType,
+          points:        confirmTarget.points,
+          stat:          confirmTarget.stat,
+          logged_at:     new Date(Date.now() + 9 * 3600 * 1000).toISOString(),
+        }).catch(() => {});
+      });
+    }
+
     const newDone = completedMissions.length + 1;
     if (newDone >= TOTAL_MISSIONS) {
       setShowCelebrate(true);

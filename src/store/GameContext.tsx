@@ -203,6 +203,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (prev.allMissionDates.includes(today)) return prev;
       const newDates = [...prev.allMissionDates, today];
       AsyncStorage.setItem('@all_mission_dates', JSON.stringify(newDates)).catch(() => {});
+      const username = currentUsernameRef.current;
+      if (username) {
+        import('../lib/supabase').then(({ upsertDailyRecord }) => {
+          upsertDailyRecord({
+            username,
+            record_date:        today,
+            all_missions_done:  true,
+            energy_100:         prev.energy100Dates.includes(today),
+            missions_completed: 8,
+          }).catch(() => {});
+        });
+      }
       return { ...prev, allMissionDates: newDates };
     });
   };
@@ -263,6 +275,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
       if (prev.energy100Dates.includes(today)) return prev;
       const newDates = [...prev.energy100Dates, today];
       AsyncStorage.setItem('@energy_100_dates', JSON.stringify(newDates)).catch(() => {});
+      const username = currentUsernameRef.current;
+      if (username) {
+        import('../lib/supabase').then(({ upsertDailyRecord }) => {
+          upsertDailyRecord({
+            username,
+            record_date:        today,
+            all_missions_done:  prev.allMissionDates.includes(today),
+            energy_100:         true,
+            missions_completed: prev.completedMissions.length,
+          }).catch(() => {});
+        });
+      }
       return { ...prev, energy100Dates: newDates };
     });
   };

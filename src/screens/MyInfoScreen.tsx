@@ -4,6 +4,7 @@ import {
   SafeAreaView, Platform, TextInput, Modal, Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGame } from '../store/GameContext';
 import { COLORS, SHADOW } from '../constants';
@@ -52,6 +53,7 @@ interface Props {
 }
 
 export default function MyInfoScreen({ onLogout }: Props) {
+  const navigation = useNavigation<any>();
   const {
     characterName, profileEmoji, statusMsg, sweatPoints, energy, uniqueId,
     setProfileEmoji, setStatusMsg,
@@ -213,6 +215,7 @@ export default function MyInfoScreen({ onLogout }: Props) {
     {
       title: '내 활동',
       items: [
+        { icon: 'bar-chart-outline', label: '나의 활동 보고서', onPress: () => navigation.navigate('Report') },
         { icon: 'footsteps-outline', label: '러닝 마일리지', value: `${sweatPoints} 마일`, onPress: undefined as (() => void) | undefined },
         { icon: 'heart-outline',     label: '마음 에너지',   value: `${energy} / 100`,     onPress: undefined as (() => void) | undefined },
       ],

@@ -21,6 +21,7 @@ import FriendScreen from './src/screens/FriendScreen';
 import MyInfoScreen from './src/screens/MyInfoScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import ReportScreen from './src/screens/ReportScreen';
 import { COLORS } from './src/constants';
 import { UserProfile } from './src/types/auth';
 import { Session } from './src/lib/session';
@@ -171,6 +172,7 @@ function AppContent() {
         <Stack.Screen name="Running"  component={RunningScreen}  options={{ presentation: 'modal' }} />
         <Stack.Screen name="Exchange" component={ExchangeScreen} options={{ presentation: 'modal' }} />
         <Stack.Screen name="Admin"    component={AdminScreen}    options={{ presentation: 'modal' }} />
+        <Stack.Screen name="Report"   component={ReportScreen}   options={{ presentation: 'modal' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
