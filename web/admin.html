@@ -1,16 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>S.WEATHER LAND ??愿由ъ옄</title>
+  <title>S.WEATHER LAND — 관리자</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F2F5;color:#111;height:100vh;display:flex;flex-direction:column}
     a{color:inherit;text-decoration:none}
 
-    /* ?? 濡쒓렇???? */
+    /* 로그인 */
     #login{display:flex;align-items:center;justify-content:center;height:100vh;background:#F0F2F5}
     .login-card{background:#fff;border-radius:20px;padding:48px 40px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,.08);width:360px}
     .login-card .icon{font-size:52px}
@@ -23,7 +23,7 @@
     .btn-primary:hover{background:#1A3A52}
     .btn-link{background:none;border:none;color:#888;font-size:13px;cursor:pointer;padding:4px 0}
 
-    /* ?? ??쒕낫???? */
+    /* 대시보드 */
     #dashboard{display:none;flex-direction:column;height:100vh;overflow:hidden}
     .top-bar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:#fff;border-bottom:1px solid #E0E0E0;flex-shrink:0}
     .top-bar-left{display:flex;align-items:center;gap:12px}
@@ -86,77 +86,75 @@
 </head>
 <body>
 
-<!-- 濡쒓렇??-->
+<!-- 로그인 -->
 <div id="login">
   <div class="login-card">
-    <span class="icon">?뵏</span>
-    <h1>愿由ъ옄 ?ы꽭</h1>
+    <span class="icon">&#x1F512;</span>
+    <h1>관리자 포털</h1>
     <p>S.WEATHER LAND Admin Dashboard</p>
-    <input type="password" id="pin-input" placeholder="愿由ъ옄 PIN" maxlength="8" inputmode="numeric" />
+    <input type="password" id="pin-input" placeholder="관리자 PIN" maxlength="8" inputmode="numeric" />
     <span class="err" id="err-msg"></span>
-    <button class="btn-primary" onclick="doLogin()">?묒냽?섍린</button>
-    <button class="btn-link" onclick="location.href='/'">???깆쑝濡??뚯븘媛湲?/button>
+    <button class="btn-primary" onclick="doLogin()">접속하기</button>
+    <button class="btn-link" onclick="location.href='/'">← 앱으로 돌아가기</button>
   </div>
 </div>
 
-<!-- ??쒕낫??-->
+<!-- 대시보드 -->
 <div id="dashboard">
   <div class="top-bar">
     <div class="top-bar-left">
-      <span style="font-size:20px">?뵏</span>
+      <span style="font-size:20px">&#x1F512;</span>
       <div>
-        <h1>愿由ъ옄 ?ы꽭</h1>
+        <h1>관리자 포털</h1>
         <span>S.WEATHER LAND</span>
       </div>
     </div>
     <div class="top-bar-right">
-      <span id="loading-indicator" style="font-size:12px;color:#888;display:none">濡쒕뵫 以묅?/span>
-      <button class="btn-sm btn-refresh" onclick="loadAll()">???덈줈怨좎묠</button>
-      <button class="btn-sm btn-exit" onclick="logout()">?섍?湲?/button>
+      <span id="loading-indicator" style="font-size:12px;color:#888;display:none">로딩 중…</span>
+      <button class="btn-sm btn-refresh" onclick="loadAll()">↻ 새로고침</button>
+      <button class="btn-sm btn-exit" onclick="logout()">나가기</button>
     </div>
   </div>
 
   <div class="stats-bar" id="stats-bar"></div>
-
   <div class="tabs" id="tabs"></div>
 
   <div class="toolbar">
     <div class="search-box">
       <svg width="14" height="14" fill="none" stroke="#aaa" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input type="text" id="search-input" placeholder="寃?됤? oninput="render()" />
+      <input type="text" id="search-input" placeholder="검색…" oninput="render()" />
     </div>
-    <button class="btn-csv" onclick="downloadCSV()">燧?CSV ?ㅼ슫濡쒕뱶</button>
-    <button class="btn-sheets" onclick="openSheets()">?뱤 Google Sheets ?곕룞</button>
+    <button class="btn-csv" onclick="downloadCSV()">&#x2B07; CSV 다운로드</button>
+    <button class="btn-sheets" onclick="openSheets()">&#x1F4CA; Google Sheets 연동</button>
   </div>
 
   <div class="table-wrap" id="table-wrap">
-    <div class="loading">?곗씠?곕? 遺덈윭?ㅻ뒗 以묅?/div>
+    <div class="loading">데이터를 불러오는 중…</div>
   </div>
 </div>
 
-<!-- Sheets ?덈궡 紐⑤떖 -->
+<!-- Google Sheets 안내 모달 -->
 <div id="sheets-modal">
   <div class="sheets-card">
-    <h2>?뱤 Google Sheets ?먮룞 ?곕룞</h2>
-    <p>Google Sheets?먯꽌 ?꾨옒 ?섏떇??????낅젰?섎㈃ ?곗씠?곌? ?먮룞?쇰줈 遺덈윭?吏묐땲??<br>留ㅼ씪 ?먮룞 媛깆떊?쇱슂.</p>
+    <h2>&#x1F4CA; Google Sheets 자동 연동</h2>
+    <p>Google Sheets에서 아래 수식을 셀에 입력하면 데이터가 자동으로 불러와집니다.</p>
 
-    <p><strong>?뫁 ?뚯썝 紐낅떒</strong></p>
+    <p><strong>회원 명단</strong></p>
     <code id="sheet-url-members"></code>
 
-    <p><strong>?뮡 媛먯젙 湲곕줉</strong></p>
+    <p><strong>감정 기록</strong></p>
     <code id="sheet-url-moods"></code>
 
-    <p><strong>??誘몄뀡 湲곕줉</strong></p>
+    <p><strong>미션 기록</strong></p>
     <code id="sheet-url-missions"></code>
 
-    <p><strong>?뱟 ?쇰퀎 ?쒕룞</strong></p>
+    <p><strong>일별 활동</strong></p>
     <code id="sheet-url-daily"></code>
 
     <p style="font-size:12px;color:#999">
-      ?뮕 Google Sheets?먯꽌 鍮?? ?대┃ ?????섏떇 遺숈뿬?ｊ린 ??Enter<br>
-      ?곗씠?곌? ?먮룞?쇰줈 梨꾩썙吏묐땲??
+      Google Sheets에서 빈 셀 클릭 후 위 수식을 붙여넣고 Enter를 누르세요.
     </p>
-    <button class="close-btn" onclick="document.getElementById('sheets-modal').classList.remove('open')">?リ린</button>
+    <button class="close-btn" onclick="document.getElementById('sheets-modal').classList.remove('open')">닫기</button>
   </div>
 </div>
 
@@ -171,22 +169,22 @@
   let data = { members: [], moods: [], missions: [], daily: [] };
   let currentTab = 'members';
 
-  // ?? 濡쒓렇????????????????????????????????????????????????????????
-  document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  /* 로그인 */
+  document.addEventListener('DOMContentLoaded', function() {
+    var inp = document.getElementById('pin-input');
+    if (inp) inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+  });
 
   async function doLogin() {
-    const pin = document.getElementById('pin-input').value;
+    var pin = document.getElementById('pin-input').value.trim();
     if (pin !== ADMIN_PIN) {
-      document.getElementById('err-msg').textContent = 'PIN???щ컮瑜댁? ?딆븘??;
+      document.getElementById('err-msg').textContent = 'PIN이 올바르지 않아요';
       document.getElementById('pin-input').value = '';
       return;
     }
     document.getElementById('login').style.display = 'none';
     document.getElementById('dashboard').style.display = 'flex';
     await loadAll();
-    renderTabs();
-    renderStats();
-    render();
   }
 
   function logout() {
@@ -196,82 +194,86 @@
     data = { members: [], moods: [], missions: [], daily: [] };
   }
 
-  // ?? ?곗씠??濡쒕뱶 ??????????????????????????????????????????????????
+  /* 데이터 로드 */
   async function loadAll() {
-    const li = document.getElementById('loading-indicator');
-    li.style.display = 'inline';
+    var li = document.getElementById('loading-indicator');
+    if (li) li.style.display = 'inline';
     try {
-      const [m, mo, mi, d] = await Promise.all([
+      var r = await Promise.all([
         db.from('user_profiles').select('username,real_name,student_id,phone,emoji,created_at,friend_code,sweat_points').order('created_at', { ascending: false }),
         db.from('mood_logs').select('*').order('logged_at', { ascending: false }),
         db.from('mission_logs').select('*').order('logged_at', { ascending: false }),
         db.from('daily_records').select('*').order('record_date', { ascending: false }),
       ]);
-      data.members  = m.data  ?? [];
-      data.moods    = mo.data ?? [];
-      data.missions = mi.data ?? [];
-      data.daily    = d.data  ?? [];
-      renderStats();
-      render();
+      data.members  = r[0].data || [];
+      data.moods    = r[1].data || [];
+      data.missions = r[2].data || [];
+      data.daily    = r[3].data || [];
     } catch(e) { console.error(e); }
-    li.style.display = 'none';
-  }
-
-  // ?? ?쒓컙 ?щ㎎ (KST) ?????????????????????????????????????????????
-  function fmtKST(iso) {
-    if (!iso) return '??;
-    const d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
-    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-  }
-  function pad(n) { return String(n).padStart(2, '0'); }
-
-  // ?? ?듦퀎 ?????????????????????????????????????????????????????????
-  function renderStats() {
-    const fullDays   = data.daily.filter(d => d.all_missions_done).length;
-    const missionUsr = new Set(data.missions.map(m => m.username)).size;
-    const avgMiss    = missionUsr > 0 ? Math.round(data.missions.length / missionUsr) : 0;
-    const chips = [
-      { n: data.members.length,  l: '珥??뚯썝' },
-      { n: data.moods.length,    l: '媛먯젙 湲곕줉' },
-      { n: data.missions.length, l: '誘몄뀡 ?꾨즺' },
-      { n: fullDays,             l: '諛고꽣由?異⑹쟾?? },
-      { n: missionUsr,           l: '?쒕룞 ?뚯썝' },
-      { n: avgMiss,              l: '?몃떦 誘몄뀡' },
-    ];
-    document.getElementById('stats-bar').innerHTML =
-      chips.map(c => `<div class="stat"><span class="stat-num">${c.n}</span><span class="stat-lbl">${c.l}</span></div>`).join('');
-  }
-
-  // ?? ?????????????????????????????????????????????????????????????
-  const TABS = [
-    { key: 'members',  label: '?뫁 ?뚯썝 紐낅떒' },
-    { key: 'moods',    label: '?뮡 媛먯젙 湲곕줉' },
-    { key: 'missions', label: '??誘몄뀡 湲곕줉' },
-    { key: 'daily',    label: '?뱟 ?쇰퀎 ?쒕룞' },
-  ];
-
-  function renderTabs() {
-    document.getElementById('tabs').innerHTML = TABS.map(t =>
-      `<div class="tab ${t.key === currentTab ? 'active' : ''}" onclick="switchTab('${t.key}')">${t.label} (${data[t.key].length})</div>`
-    ).join('');
-  }
-
-  function switchTab(key) {
-    currentTab = key;
-    document.getElementById('search-input').value = '';
+    if (li) li.style.display = 'none';
+    renderStats();
     renderTabs();
     render();
   }
 
-  // ?? ?뚯씠釉??뚮뜑 ??????????????????????????????????????????????????
+  /* KST 시간 포맷 */
+  function fmtKST(iso) {
+    if (!iso) return '—';
+    var d = new Date(new Date(iso).getTime() + 9 * 3600 * 1000);
+    return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  /* 통계 */
+  function renderStats() {
+    var fullDays   = data.daily.filter(function(d) { return d.all_missions_done; }).length;
+    var missionUsr = (new Set(data.missions.map(function(m) { return m.username; }))).size;
+    var avgMiss    = missionUsr > 0 ? Math.round(data.missions.length / missionUsr) : 0;
+    var chips = [
+      { n: data.members.length,  l: '총 회원' },
+      { n: data.moods.length,    l: '감정 기록' },
+      { n: data.missions.length, l: '미션 완료' },
+      { n: fullDays,             l: '배터리 충전일' },
+      { n: missionUsr,           l: '활동 회원' },
+      { n: avgMiss,              l: '인당 미션' },
+    ];
+    document.getElementById('stats-bar').innerHTML =
+      chips.map(function(c) {
+        return '<div class="stat"><span class="stat-num">' + c.n + '</span><span class="stat-lbl">' + c.l + '</span></div>';
+      }).join('');
+  }
+
+  /* 탭 */
+  var TABS = [
+    { key: 'members',  label: '회원 명단' },
+    { key: 'moods',    label: '감정 기록' },
+    { key: 'missions', label: '미션 기록' },
+    { key: 'daily',    label: '일별 활동' },
+  ];
+
+  function renderTabs() {
+    document.getElementById('tabs').innerHTML = TABS.map(function(t) {
+      return '<div class="tab ' + (t.key === currentTab ? 'active' : '') + '" onclick="switchTab(\'' + t.key + '\')">' + t.label + ' (' + data[t.key].length + ')</div>';
+    }).join('');
+  }
+
+  function switchTab(key) {
+    currentTab = key;
+    var si = document.getElementById('search-input');
+    if (si) si.value = '';
+    renderTabs();
+    render();
+  }
+
+  /* 테이블 렌더 */
   function render() {
-    renderTabs(); // badge counts update
-    const q   = (document.getElementById('search-input')?.value ?? '').toLowerCase();
-    const rows = filter(data[currentTab], q);
-    const wrap = document.getElementById('table-wrap');
+    renderTabs();
+    var q = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
+    var rows = filter(data[currentTab], q);
+    var wrap = document.getElementById('table-wrap');
 
     if (rows.length === 0) {
-      wrap.innerHTML = `<div class="empty">?곗씠?곌? ?놁뒿?덈떎.<br><small>Supabase???뚯씠釉붿씠 ?앹꽦?섏뼱 ?덈뒗吏 ?뺤씤?댁＜?몄슂.</small></div>`;
+      wrap.innerHTML = '<div class="empty">데이터가 없습니다.<br><small>Supabase에 테이블이 생성되어 있는지 확인해주세요.</small></div>';
       return;
     }
 
@@ -283,106 +285,98 @@
 
   function filter(arr, q) {
     if (!q) return arr;
-    return arr.filter(r => Object.values(r).some(v => String(v ?? '').toLowerCase().includes(q)));
+    return arr.filter(function(r) {
+      return Object.values(r).some(function(v) { return String(v || '').toLowerCase().includes(q); });
+    });
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   function renderMembers(rows) {
-    return `<table><thead><tr>
-      <th>#</th><th>?꾩씠??/th><th>蹂몃챸</th><th>?숇쾲</th><th>?꾪솕踰덊샇</th><th>?대え吏</th><th>移쒓뎄肄붾뱶</th><th>?뮛?ъ씤??/th><th>媛?낆씪</th>
-    </tr></thead><tbody>${rows.map((r, i) => `<tr>
-      <td>${i+1}</td>
-      <td><strong>${r.username}</strong></td>
-      <td>${r.real_name ?? '??}</td>
-      <td>${r.student_id ?? '??}</td>
-      <td>${r.phone ?? '??}</td>
-      <td style="font-size:18px">${r.emoji ?? '??}</td>
-      <td>#${r.friend_code ?? '??}</td>
-      <td>${r.sweat_points ?? 0}</td>
-      <td>${fmtKST(r.created_at)}</td>
-    </tr>`).join('')}</tbody></table>`;
+    var head = '<thead><tr><th>#</th><th>아이디</th><th>본명</th><th>학번</th><th>전화번호</th><th>이모지</th><th>친구코드</th><th>포인트</th><th>가입일</th></tr></thead>';
+    var body = rows.map(function(r, i) {
+      return '<tr><td>'+(i+1)+'</td><td><strong>'+esc(r.username)+'</strong></td><td>'+esc(r.real_name)+'</td><td>'+esc(r.student_id)+'</td><td>'+esc(r.phone)+'</td><td style="font-size:18px">'+esc(r.emoji)+'</td><td>#'+esc(r.friend_code)+'</td><td>'+(r.sweat_points||0)+'</td><td>'+fmtKST(r.created_at)+'</td></tr>';
+    }).join('');
+    return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
   function renderMoods(rows) {
-    return `<table><thead><tr>
-      <th>#</th><th>?ъ슜??/th><th>媛먯젙</th><th>硫붾え</th><th>湲곕줉?쇱떆(KST)</th>
-    </tr></thead><tbody>${rows.map((r, i) => `<tr>
-      <td>${i+1}</td>
-      <td>${r.user_name}</td>
-      <td>${r.mood_label}</td>
-      <td style="color:#666">${r.memo || '??}</td>
-      <td>${fmtKST(r.logged_at)}</td>
-    </tr>`).join('')}</tbody></table>`;
+    var head = '<thead><tr><th>#</th><th>사용자</th><th>감정</th><th>메모</th><th>기록일시(KST)</th></tr></thead>';
+    var body = rows.map(function(r, i) {
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.user_name)+'</td><td>'+esc(r.mood_label)+'</td><td style="color:#666">'+esc(r.memo||'—')+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
+    }).join('');
+    return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
   function renderMissions(rows) {
-    return `<table><thead><tr>
-      <th>#</th><th>?ъ슜??/th><th>誘몄뀡</th><th>???/th><th>?뮛</th><th>?ㅽ꺈</th><th>?꾨즺?쇱떆(KST)</th>
-    </tr></thead><tbody>${rows.map((r, i) => `<tr>
-      <td>${i+1}</td>
-      <td>${r.username}</td>
-      <td>${r.mission_label}</td>
-      <td><span class="badge ${r.mission_type === 'custom' ? 'badge-custom' : 'badge-server'}">${r.mission_type === 'custom' ? '?섎쭔?? : '異붿쿇'}</span></td>
-      <td>${r.points}</td>
-      <td>${r.stat}</td>
-      <td>${fmtKST(r.logged_at)}</td>
-    </tr>`).join('')}</tbody></table>`;
+    var head = '<thead><tr><th>#</th><th>사용자</th><th>미션</th><th>타입</th><th>포인트</th><th>스탯</th><th>완료일시(KST)</th></tr></thead>';
+    var body = rows.map(function(r, i) {
+      var badge = r.mission_type === 'custom'
+        ? '<span class="badge badge-custom">나만의</span>'
+        : '<span class="badge badge-server">추천</span>';
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.mission_label)+'</td><td>'+badge+'</td><td>'+esc(r.points)+'</td><td>'+esc(r.stat)+'</td><td>'+fmtKST(r.logged_at)+'</td></tr>';
+    }).join('');
+    return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
   function renderDaily(rows) {
-    return `<table><thead><tr>
-      <th>#</th><th>?ъ슜??/th><th>?좎쭨</th><th>誘몄뀡 ?꾨즺</th><th>?먮꼫吏 100</th><th>?꾨즺 ??/th>
-    </tr></thead><tbody>${rows.map((r, i) => `<tr>
-      <td>${i+1}</td>
-      <td>${r.username}</td>
-      <td>${r.record_date}</td>
-      <td>${r.all_missions_done ? '<span class="badge badge-ok">???꾨즺</span>' : '<span class="badge-no">??/span>'}</td>
-      <td>${r.energy_100 ? '<span class="badge badge-ok">?뮣</span>' : '<span class="badge-no">??/span>'}</td>
-      <td>${r.missions_completed}</td>
-    </tr>`).join('')}</tbody></table>`;
+    var head = '<thead><tr><th>#</th><th>사용자</th><th>날짜</th><th>미션 완료</th><th>에너지 100</th><th>완료 수</th></tr></thead>';
+    var body = rows.map(function(r, i) {
+      return '<tr><td>'+(i+1)+'</td><td>'+esc(r.username)+'</td><td>'+esc(r.record_date)+'</td>'
+        +'<td>'+(r.all_missions_done ? '<span class="badge badge-ok">완료</span>' : '<span class="badge-no">—</span>')+'</td>'
+        +'<td>'+(r.energy_100 ? '<span class="badge badge-ok">달성</span>' : '<span class="badge-no">—</span>')+'</td>'
+        +'<td>'+esc(r.missions_completed)+'</td></tr>';
+    }).join('');
+    return '<table>'+head+'<tbody>'+body+'</tbody></table>';
   }
 
-  // ?? CSV ?ㅼ슫濡쒕뱶 ?????????????????????????????????????????????????
+  /* CSV 다운로드 */
   function downloadCSV() {
-    const q    = (document.getElementById('search-input')?.value ?? '').toLowerCase();
-    const rows = filter(data[currentTab], q);
-    const date = new Date().toISOString().slice(0, 10);
-    let header, body;
+    var q    = ((document.getElementById('search-input') || {}).value || '').toLowerCase();
+    var rows = filter(data[currentTab], q);
+    var date = new Date().toISOString().slice(0, 10);
+    var header, body;
 
     if (currentTab === 'members') {
-      header = ['踰덊샇','?꾩씠??,'蹂몃챸','?숇쾲','?꾪솕踰덊샇','?대え吏','移쒓뎄肄붾뱶','?뮛?ъ씤??,'媛?낆씪'];
-      body   = rows.map((r, i) => [i+1, r.username, r.real_name??'', r.student_id??'', r.phone??'', r.emoji??'', r.friend_code??'', r.sweat_points??0, fmtKST(r.created_at)]);
+      header = ['번호','아이디','본명','학번','전화번호','이모지','친구코드','포인트','가입일'];
+      body   = rows.map(function(r, i) { return [i+1, r.username, r.real_name||'', r.student_id||'', r.phone||'', r.emoji||'', r.friend_code||'', r.sweat_points||0, fmtKST(r.created_at)]; });
     } else if (currentTab === 'moods') {
-      header = ['踰덊샇','?ъ슜??,'媛먯젙ID','媛먯젙','硫붾え','湲곕줉?쇱떆(KST)'];
-      body   = rows.map((r, i) => [i+1, r.user_name, r.mood_id, r.mood_label, r.memo??'', fmtKST(r.logged_at)]);
+      header = ['번호','사용자','감정ID','감정','메모','기록일시(KST)'];
+      body   = rows.map(function(r, i) { return [i+1, r.user_name, r.mood_id, r.mood_label, r.memo||'', fmtKST(r.logged_at)]; });
     } else if (currentTab === 'missions') {
-      header = ['踰덊샇','?ъ슜??,'誘몄뀡','???,'?ъ씤??,'?ㅽ꺈','?꾨즺?쇱떆(KST)'];
-      body   = rows.map((r, i) => [i+1, r.username, r.mission_label, r.mission_type, r.points, r.stat, fmtKST(r.logged_at)]);
+      header = ['번호','사용자','미션','타입','포인트','스탯','완료일시(KST)'];
+      body   = rows.map(function(r, i) { return [i+1, r.username, r.mission_label, r.mission_type, r.points, r.stat, fmtKST(r.logged_at)]; });
     } else {
-      header = ['踰덊샇','?ъ슜??,'?좎쭨','誘몄뀡?꾨즺','?먮꼫吏100','?꾨즺??];
-      body   = rows.map((r, i) => [i+1, r.username, r.record_date, r.all_missions_done?'O':'X', r.energy_100?'O':'X', r.missions_completed]);
+      header = ['번호','사용자','날짜','미션완료','에너지100','완료수'];
+      body   = rows.map(function(r, i) { return [i+1, r.username, r.record_date, r.all_missions_done?'O':'X', r.energy_100?'O':'X', r.missions_completed]; });
     }
 
-    const BOM  = '癤?;
-    const csv  = BOM + [header, ...body].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `sweatherland_${currentTab}_${date}.csv`;
-    a.click(); URL.revokeObjectURL(url);
+    var BOM  = '﻿';
+    var csv  = BOM + [header].concat(body).map(function(r) {
+      return r.map(function(c) { return '"' + String(c).replace(/"/g,'""') + '"'; }).join(',');
+    }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url;
+    a.download = 'sweatherland_' + currentTab + '_' + date + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  // ?? Google Sheets ?곕룞 ?덈궡 ???????????????????????????????????????
+  /* Google Sheets 연동 안내 */
   function openSheets() {
-    const base = location.origin + '/api/export';
-    document.getElementById('sheet-url-members').textContent  = `=IMPORTDATA("${base}?table=members")`;
-    document.getElementById('sheet-url-moods').textContent    = `=IMPORTDATA("${base}?table=moods")`;
-    document.getElementById('sheet-url-missions').textContent = `=IMPORTDATA("${base}?table=missions")`;
-    document.getElementById('sheet-url-daily').textContent    = `=IMPORTDATA("${base}?table=daily")`;
+    var base = location.origin + '/api/export';
+    document.getElementById('sheet-url-members').textContent  = '=IMPORTDATA("' + base + '?table=members")';
+    document.getElementById('sheet-url-moods').textContent    = '=IMPORTDATA("' + base + '?table=moods")';
+    document.getElementById('sheet-url-missions').textContent = '=IMPORTDATA("' + base + '?table=missions")';
+    document.getElementById('sheet-url-daily').textContent    = '=IMPORTDATA("' + base + '?table=daily")';
     document.getElementById('sheets-modal').classList.add('open');
   }
 
-  // 紐⑤떖 諛붽묑 ?대┃ ?リ린
-  document.getElementById('sheets-modal').addEventListener('click', e => {
+  document.getElementById('sheets-modal').addEventListener('click', function(e) {
     if (e.target === document.getElementById('sheets-modal'))
       document.getElementById('sheets-modal').classList.remove('open');
   });
