@@ -3,28 +3,21 @@
  * 환경변수: GEMINI_API_KEY (Vercel 대시보드 → Settings → Environment Variables)
  */
 
-const MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-];
+const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
-const PROMPT = `You are a fitness data extractor. Analyze this smartphone fitness/health app screenshot and extract numeric data.
+const PROMPT = `You are analyzing a fitness or health app screenshot.
+Extract ONLY these numeric values and return a single JSON object:
 
-Return ONLY a valid JSON object — no markdown, no code blocks, no explanations.
-
-JSON format:
-{"steps": <integer or null>, "exerciseMinutes": <integer or null>, "distance": <float km or null>, "calories": <integer or null>}
+{"steps": <integer or null>, "distance": <float km or null>, "exerciseMinutes": <integer or null>, "calories": <integer or null>}
 
 Rules:
-- "steps": total step count today (e.g. 8432, not 8,432). Look for "걸음", "steps", "歩数" etc.
-- "distance": running/walking distance in km (convert miles to km if needed). Look for "km", "mi", "킬로", "거리" etc.
-- "exerciseMinutes": total active/exercise minutes. Look for "분", "min", "minutes" etc.
-- "calories": calories burned (kcal). Look for "kcal", "cal", "칼로리" etc.
-- Remove thousand separators: "8,432" → 8432
-- If a field is not visible, use null
-- Never guess — only extract numbers clearly shown in the image`;
+- steps: step count. Look for "걸음", "steps", "步数". Remove commas: "8,432" → 8432
+- distance: km. Convert miles to km if needed. Look for "km", "mi", "거리"
+- exerciseMinutes: minutes active. Look for "분", "min"
+- calories: kcal burned. Look for "kcal", "칼로리"
+- null if not visible in the image
+- Return ONLY the JSON object, no other text`;
 
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,12 +39,12 @@ export default async function handler(req: any, res: any) {
   }
 
   const imageMime = mimeType || 'image/jpeg';
+  const errors: string[] = [];
 
-  let lastError = '';
   for (const model of MODELS) {
     try {
       const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `${BASE}/${model}:generateContent?key=${apiKey}`,
         {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -65,61 +58,68 @@ export default async function handler(req: any, res: any) {
             generationConfig: {
               temperature:     0,
               maxOutputTokens: 256,
-              responseMimeType: 'application/json',
             },
           }),
         },
       );
 
       if (!geminiRes.ok) {
-        const errText = await geminiRes.text();
-        lastError = `${model}: ${geminiRes.status} ${errText.slice(0, 200)}`;
-        console.error('[Gemini]', lastError);
-        continue; // 다음 모델 시도
+        const errBody = await geminiRes.text();
+        errors.push(`[${model}] ${geminiRes.status}: ${errBody.slice(0, 150)}`);
+        continue;
       }
 
       const data    = await geminiRes.json();
       const rawText: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 
-      // JSON 파싱 — 코드블록, 앞뒤 텍스트 모두 제거
-      const cleaned = rawText
-        .replace(/```json\s*/gi, '')
-        .replace(/```\s*/g, '')
-        .trim();
+      if (!rawText) {
+        errors.push(`[${model}] 빈 응답`);
+        continue;
+      }
 
-      // { ... } 블록 추출 (가장 바깥 JSON)
+      // 코드블록 제거 후 JSON 추출
+      const cleaned = rawText.replace(/```[a-z]*\s*/gi, '').replace(/```/g, '').trim();
       const start = cleaned.indexOf('{');
       const end   = cleaned.lastIndexOf('}');
+
       if (start === -1 || end === -1) {
-        lastError = `${model}: JSON 없음 — "${rawText.slice(0, 100)}"`;
+        // JSON 없음 → 숫자만 추출 시도
+        const stepMatch = rawText.match(/(?:걸음|steps?)[^\d]*?([\d,]+)/i);
+        const distMatch = rawText.match(/([\d.]+)\s*km/i);
+        if (stepMatch || distMatch) {
+          return res.json({
+            steps:    stepMatch ? parseInt(stepMatch[1].replace(/,/g, ''), 10) : null,
+            distance: distMatch ? parseFloat(distMatch[1]) : null,
+            exerciseMinutes: null,
+            calories: null,
+          });
+        }
+        errors.push(`[${model}] JSON 없음: "${rawText.slice(0, 80)}"`);
         continue;
       }
 
-      const jsonStr = cleaned.slice(start, end + 1);
       let result: any;
       try {
-        result = JSON.parse(jsonStr);
+        result = JSON.parse(cleaned.slice(start, end + 1));
       } catch {
-        lastError = `${model}: JSON 파싱 실패 — "${jsonStr.slice(0, 100)}"`;
+        errors.push(`[${model}] JSON 파싱 실패: "${cleaned.slice(start, start + 80)}"`);
         continue;
       }
 
-      // 숫자 타입 보정
-      const steps    = typeof result.steps           === 'number' ? Math.round(result.steps)           : null;
-      const distance = typeof result.distance        === 'number' ? Math.round(result.distance * 10) / 10 : null;
-      const minutes  = typeof result.exerciseMinutes === 'number' ? Math.round(result.exerciseMinutes) : null;
-      const calories = typeof result.calories        === 'number' ? Math.round(result.calories)        : null;
+      const steps    = typeof result.steps           === 'number' ? Math.round(result.steps)                : null;
+      const distance = typeof result.distance        === 'number' ? Math.round(result.distance * 10) / 10   : null;
+      const minutes  = typeof result.exerciseMinutes === 'number' ? Math.round(result.exerciseMinutes)      : null;
+      const calories = typeof result.calories        === 'number' ? Math.round(result.calories)             : null;
 
       return res.json({ steps, distance, exerciseMinutes: minutes, calories });
 
     } catch (e: any) {
-      lastError = `${model}: ${e.message}`;
-      console.error('[Gemini fetch error]', lastError);
+      errors.push(`[${model}] fetch 오류: ${e.message}`);
     }
   }
 
   return res.status(502).json({
     error: '이미지에서 운동 데이터를 읽지 못했어요.',
-    detail: lastError,
+    detail: errors.join(' | '),
   });
 }

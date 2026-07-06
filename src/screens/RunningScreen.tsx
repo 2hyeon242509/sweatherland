@@ -29,12 +29,6 @@ async function saveOcrUsage(count: number): Promise<void> {
   await AsyncStorage.setItem(OCR_STORAGE_KEY, JSON.stringify({ date: getTodayKST(), count }));
 }
 
-const MOCK_HISTORY = [
-  { date: '2024.05.21  12:10', from: 500, to: 50 },
-  { date: '2024.05.18  09:34', from: 200, to: 20 },
-];
-
-const BONUS_RATE = 20;
 const isWeb = Platform.OS === 'web';
 
 /* 걸음수 → 마일리지 변환 (10,000걸음 = 100마일) */
@@ -57,7 +51,6 @@ export default function RunningScreen() {
   const navigation = useNavigation();
   const { energy, sweatPoints, exchangeSweatToEnergy, addSweat } = useGame();
 
-  const [historyList] = useState(MOCK_HISTORY);
   const [message,     setMessage]     = useState('');
   const [messageType, setMessageType] = useState<'success' | 'warn' | ''>('');
 
@@ -377,25 +370,6 @@ export default function RunningScreen() {
             </View>
           </View>
 
-          {/* ── Bonus Card ──────────────────────── */}
-          <View style={styles.bonusCard}>
-            <View style={styles.bonusLeft}>
-              <View style={styles.bonusBadge}>
-                <Text style={styles.bonusBadgeText}>{BONUS_RATE}%</Text>
-              </View>
-              <View style={styles.bonusTextWrap}>
-                <Text style={styles.bonusTitle}>오늘의 환전 보너스</Text>
-                <Text style={styles.bonusDesc}>
-                  러닝 3km 달성!{'\n'}환전 보너스 +{BONUS_RATE}% 적용 중
-                </Text>
-              </View>
-            </View>
-            <View style={styles.bonusStars}>
-              <Text style={{ fontSize: 16 }}>✨</Text>
-              <Text style={{ fontSize: 12 }}>✨</Text>
-            </View>
-          </View>
-
           {/* ── Energy Info ─────────────────────── */}
           <View style={styles.energyInfo}>
             <Ionicons name="heart" size={14} color={COLORS.navy} />
@@ -424,29 +398,6 @@ export default function RunningScreen() {
             <Text style={styles.notEnoughHint}>100 마일리지 이상 모아야 환전할 수 있어요</Text>
           )}
 
-          {/* ── Recent History ──────────────────── */}
-          <View style={styles.historySection}>
-            <View style={styles.sectionRow}>
-              <Text style={styles.sectionTitle}>최근 환전 내역</Text>
-              <TouchableOpacity>
-                <Text style={styles.sectionLink}>전체 보기 ›</Text>
-              </TouchableOpacity>
-            </View>
-            {historyList.map((item, i) => (
-              <View key={i} style={styles.historyItem}>
-                <View style={styles.historyIconWrap}>
-                  <Text style={{ fontSize: 18 }}>👟</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.historyDate}>{item.date}</Text>
-                  <Text style={styles.historyDesc}>{item.from} 마일 → {item.to} 에너지</Text>
-                </View>
-                <View style={styles.historyBadge}>
-                  <Text style={styles.historyBadgeText}>+{item.to}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
 
         </ScrollView>
       </SafeAreaView>

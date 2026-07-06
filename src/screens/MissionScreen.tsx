@@ -3,6 +3,8 @@ import {
   View, Text, TouchableOpacity, ScrollView, TextInput, Modal,
   StyleSheet, SafeAreaView, Platform, Animated, KeyboardAvoidingView,
 } from 'react-native';
+
+const isWeb = Platform.OS === 'web';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -259,6 +261,7 @@ export default function MissionScreen() {
   const doneCount         = completedMissions.length;
 
   return (
+    <View style={s.outer}>
     <SafeAreaView style={s.safe}>
 
       {/* ── 헤더 ────────────────────────────────────── */}
@@ -518,11 +521,17 @@ export default function MissionScreen() {
         </View>
       )}
     </SafeAreaView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.bg },
+  outer: {
+    flex: 1,
+    backgroundColor: isWeb ? '#F2F2F7' : COLORS.bg,
+    alignItems: isWeb ? 'center' : 'stretch',
+  },
+  safe: { flex: 1, backgroundColor: COLORS.bg, width: isWeb ? 390 : '100%' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
