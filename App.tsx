@@ -85,13 +85,21 @@ function AppContent() {
               setCharacterName(data.username);
               setProfileEmoji(data.emoji || '🐱');
               try {
-                const { loadUserGameData } = await import('./src/lib/supabase');
+                const { loadUserGameData, generateUniqueFriendCode, saveFriendCode } = await import('./src/lib/supabase');
                 const gd = await loadUserGameData(data.username);
+                let friendCode = gd?.friendCode ?? '';
+                /* 친구코드 없으면 자동 생성 후 저장 */
+                if (!friendCode) {
+                  try {
+                    friendCode = await generateUniqueFriendCode();
+                    await saveFriendCode(data.username, friendCode);
+                  } catch {}
+                }
                 initUserData({
                   username:    data.username,
                   sweatPoints: gd?.sweatPoints ?? 0,
                   statusMsg:   gd?.statusMsg   ?? '',
-                  friendCode:  gd?.friendCode  ?? '',
+                  friendCode,
                 });
               } catch {}
               setAuth('app');
@@ -131,13 +139,20 @@ function AppContent() {
     setProfileEmoji(profile.emoji);
     (async () => {
       try {
-        const { loadUserGameData } = await import('./src/lib/supabase');
+        const { loadUserGameData, generateUniqueFriendCode, saveFriendCode } = await import('./src/lib/supabase');
         const gd = await loadUserGameData(profile.username);
+        let friendCode = gd?.friendCode ?? '';
+        if (!friendCode) {
+          try {
+            friendCode = await generateUniqueFriendCode();
+            await saveFriendCode(profile.username, friendCode);
+          } catch {}
+        }
         initUserData({
           username:    profile.username,
           sweatPoints: gd?.sweatPoints ?? 0,
           statusMsg:   gd?.statusMsg   ?? '',
-          friendCode:  gd?.friendCode  ?? '',
+          friendCode,
         });
       } catch {}
     })();

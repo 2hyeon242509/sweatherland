@@ -50,15 +50,22 @@ export async function upsertUserProfile(profile: UserProfile): Promise<void> {
   if (error) throw error;
 }
 
-/** 고유 ID로 유저 검색 */
+/** 고유 ID(#XXXX)로 유저 검색 — user_profiles.friend_code 기준 */
 export async function searchUserById(uniqueId: string): Promise<UserProfile | null> {
+  const code = uniqueId.replace('#', '');
   const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('unique_id', uniqueId)
+    .from('user_profiles')
+    .select('username, emoji, friend_code, status_msg')
+    .eq('friend_code', code)
     .maybeSingle();
   if (error || !data) return null;
-  return data as UserProfile;
+  return {
+    unique_id:     '#' + data.friend_code,
+    nickname:      data.username,
+    char_id:       '',
+    profile_emoji: data.emoji ?? '🐱',
+    status_msg:    data.status_msg ?? '',
+  };
 }
 
 /** Supabase 연결 여부 확인 */
@@ -129,6 +136,30 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
     .eq('username', username)
     .maybeSingle();
   return !!data;
+}
+
+/** 가입 시 사용할 고유 친구코드 생성 (DB에서 중복 확인) */
+export async function generateUniqueFriendCode(): Promise<string> {
+  const { data } = await supabase.from('user_profiles').select('friend_code');
+  const used = new Set(
+    (data ?? []).map((r: any) => r.friend_code).filter(Boolean),
+  );
+  let code: string;
+  let tries = 0;
+  do {
+    code = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    tries++;
+  } while (used.has(code) && tries < 200);
+  return code;
+}
+
+/** 기존 사용자에게 친구코드 저장 */
+export async function saveFriendCode(username: string, code: string): Promise<void> {
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ friend_code: code })
+    .eq('username', username);
+  if (error) throw error;
 }
 
 /** 회원 가입 */

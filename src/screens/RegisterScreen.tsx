@@ -95,7 +95,13 @@ export default function RegisterScreen({ onComplete, onBack }: Props) {
   /* ── STEP 3 ── */
   async function handleComplete() {
     const now = new Date().toISOString();
-    const friendCode = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    let friendCode: string;
+    try {
+      const { generateUniqueFriendCode } = await import('../lib/supabase');
+      friendCode = await generateUniqueFriendCode();
+    } catch {
+      friendCode = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    }
     const profile: UserProfile = {
       username: username.trim(), pin, emoji,
       realName: realName.trim(), studentId: studentId.trim(),
