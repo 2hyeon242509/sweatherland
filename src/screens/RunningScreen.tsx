@@ -49,7 +49,7 @@ interface FitnessResult {
 
 export default function RunningScreen() {
   const navigation = useNavigation();
-  const { energy, sweatPoints, exchangeSweatToEnergy, addSweat } = useGame();
+  const { energy, sweatPoints, exchangeSweatToEnergy, addSweat, currentUsername } = useGame();
 
   const [message,     setMessage]     = useState('');
   const [messageType, setMessageType] = useState<'success' | 'warn' | ''>('');
@@ -157,6 +157,20 @@ export default function RunningScreen() {
     setOcrAdded(true);
     setMessage(`🎉 ${mileage} 마일리지가 추가됐어요!`);
     setMessageType('success');
+
+    if (currentUsername) {
+      import('../lib/supabase').then(({ saveExerciseLog }) => {
+        saveExerciseLog({
+          username:         currentUsername,
+          steps:            ocrResult.steps,
+          distance:         ocrResult.distance,
+          exercise_minutes: ocrResult.exerciseMinutes,
+          calories:         ocrResult.calories,
+          mileage,
+          logged_at:        new Date(Date.now() + 9 * 3600 * 1000).toISOString(),
+        }).catch(() => {});
+      });
+    }
   };
 
   /* ── 마일리지 계산 ────────────────────────── */

@@ -36,11 +36,11 @@ export default function ReportScreen() {
       try {
         const [m, mo, d] = await Promise.all([
           fetchMissionLogs(currentUsername),
-          fetchAllMoodLogs(),
+          fetchAllMoodLogs(currentUsername),
           fetchDailyRecords(currentUsername),
         ]);
         setMissions(m);
-        setMoods(mo.filter((l: any) => l.user_name === currentUsername));
+        setMoods(mo);
         setDaily(d);
       } catch {}
       setLoading(false);
@@ -76,7 +76,7 @@ export default function ReportScreen() {
   const totalPoints    = filteredMissions.reduce((s: number, m: any) => s + (m.points ?? 0), 0);
   const batteryDays    = filteredDaily.filter(d => d.all_missions_done).length;
   const energy100Days  = filteredDaily.filter(d => d.energy_100).length;
-  const moodDays       = filteredMoods.length;
+  const moodDays       = dailyMoods.length;
 
   // 가장 많이 완료한 미션 Top 3
   const missionCount = filteredMissions.reduce((acc: Record<string, { label: string; count: number }>, m: any) => {
@@ -88,12 +88,25 @@ export default function ReportScreen() {
     .sort((a: any, b: any) => b.count - a.count)
     .slice(0, 3) as { label: string; count: number }[];
 
-  // 감정 분포
-  const moodCount = filteredMoods.reduce((acc: Record<string, number>, m: any) => {
+  // 감정 분리: 일반 vs 미션 완수 후
+  const dailyMoods       = filteredMoods.filter((m: any) => !m.log_type || m.log_type === 'daily');
+  const postMissionMoods = filteredMoods.filter((m: any) => m.log_type === 'post_mission');
+
+  // 일반 감정 분포 (Top 5)
+  const moodCount = dailyMoods.reduce((acc: Record<string, number>, m: any) => {
     acc[m.mood_label] = (acc[m.mood_label] ?? 0) + 1;
     return acc;
   }, {});
   const topMoods = Object.entries(moodCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // 미션 완수 후 감정 분포 (Top 5)
+  const postMoodCount = postMissionMoods.reduce((acc: Record<string, number>, m: any) => {
+    acc[m.mood_label] = (acc[m.mood_label] ?? 0) + 1;
+    return acc;
+  }, {});
+  const topPostMoods = Object.entries(postMoodCount)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
@@ -186,7 +199,7 @@ export default function ReportScreen() {
               ))}
           </View>
 
-          {/* 감정 분포 */}
+          {/* 일반 감정 분포 */}
           <View style={s.card}>
             <Text style={s.cardTitle}>💭 자주 느낀 감정</Text>
             {topMoods.length === 0
@@ -208,6 +221,32 @@ export default function ReportScreen() {
                   );
                 })}
           </View>
+
+          {/* 미션 완수 후 감정 분포 */}
+          {postMissionMoods.length > 0 && (
+            <View style={s.card}>
+              <Text style={s.cardTitle}>🏅 미션 완수 직후 감정</Text>
+              <Text style={[s.emptyInCard, { textAlign: 'left', paddingVertical: 0, fontSize: 12, color: COLORS.textMuted }]}>
+                총 {postMissionMoods.length}회 기록
+              </Text>
+              {topPostMoods.map(([label, count], i) => {
+                const mood = MOODS.find(m => m.label === label);
+                return (
+                  <View key={i} style={s.moodRow}>
+                    <Text style={s.moodEmoji}>{mood?.emoji ?? '🏅'}</Text>
+                    <Text style={s.moodLabel}>{label}</Text>
+                    <View style={s.moodBarWrap}>
+                      <View style={[s.moodBarFill, {
+                        width: `${topPostMoods[0][1] > 0 ? Math.round((count / topPostMoods[0][1]) * 100) : 0}%` as `${number}%`,
+                        backgroundColor: mood?.iconColor ?? COLORS.navy,
+                      }]} />
+                    </View>
+                    <Text style={s.moodCount}>{count}회</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
 
           {/* 격려 메시지 */}
           <View style={s.encourageCard}>

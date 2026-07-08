@@ -77,6 +77,20 @@ interface GameContextValue extends GameState {
 
 const GameContext = createContext<GameContextValue | null>(null);
 
+function calculateStreak(records: Array<{ record_date: string; all_missions_done: boolean }>): number {
+  const doneDates = new Set(records.filter(r => r.all_missions_done).map(r => r.record_date));
+  const todayKST  = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  let check = new Date(Date.now() + 9 * 3600 * 1000);
+  if (!doneDates.has(todayKST)) check = new Date(check.getTime() - 24 * 3600 * 1000);
+  let streak = 0;
+  while (streak < 365) {
+    if (!doneDates.has(check.toISOString().slice(0, 10))) break;
+    streak++;
+    check = new Date(check.getTime() - 24 * 3600 * 1000);
+  }
+  return streak;
+}
+
 export function GameProvider({ children }: { children: ReactNode }) {
   const currentUsernameRef = useRef('');
 
@@ -162,6 +176,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (raw) setState(prev => ({ ...prev, completedMissions: JSON.parse(raw) as string[] }));
       })
       .catch(() => {});
+    // daily_records에서 실제 연속 완료일(streak) 계산
+    import('../lib/supabase').then(({ fetchDailyRecords }) => {
+      fetchDailyRecords(data.username)
+        .then(records => {
+          const streak = calculateStreak(records);
+          setState(prev => ({ ...prev, streak }));
+        })
+        .catch(() => {});
+    });
   };
 
   const saveSweatToSupabase = (points: number) => {
@@ -225,7 +248,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           }).catch(() => {});
         });
       }
-      return { ...prev, allMissionDates: newDates };
+      return { ...prev, allMissionDates: newDates, streak: prev.streak + 1 };
     });
   };
 

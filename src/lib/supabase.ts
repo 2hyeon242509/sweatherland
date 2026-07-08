@@ -39,12 +39,11 @@ export async function saveMoodLog(log: Omit<MoodLog, 'id'>): Promise<void> {
   if (error) throw error;
 }
 
-/** 전체 감정 기록 조회 (관리자용) */
-export async function fetchAllMoodLogs(): Promise<MoodLog[]> {
-  const { data, error } = await supabase
-    .from('mood_logs')
-    .select('*')
-    .order('logged_at', { ascending: false });
+/** 감정 기록 조회 — username 지정 시 해당 유저만, 없으면 전체 (관리자용) */
+export async function fetchAllMoodLogs(username?: string): Promise<MoodLog[]> {
+  let q = supabase.from('mood_logs').select('*').order('logged_at', { ascending: false });
+  if (username) q = q.eq('user_name', username);
+  const { data, error } = await q;
   if (error) throw error;
   return (data as MoodLog[]) ?? [];
 }
@@ -263,6 +262,24 @@ export async function fetchActiveMissions(): Promise<Mission[]> {
     points: Number(r.points),
     stat:   r.stat as StatKey,
   }));
+}
+
+// ── exercise_logs 테이블 ─────────────────────────────────────────────────────
+
+export interface ExerciseLog {
+  id?:               number;
+  username:          string;
+  steps?:            number | null;
+  distance?:         number | null;
+  exercise_minutes?: number | null;
+  calories?:         number | null;
+  mileage:           number;
+  logged_at?:        string;
+}
+
+export async function saveExerciseLog(log: Omit<ExerciseLog, 'id'>): Promise<void> {
+  const { error } = await supabase.from('exercise_logs').insert([log]);
+  if (error) throw error;
 }
 
 // ── mission_logs 테이블 ───────────────────────────────────────────────────────
