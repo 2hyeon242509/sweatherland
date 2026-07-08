@@ -92,7 +92,6 @@ export default function LoginScreen({ onLogin, onRegister }: Props) {
         {/* 로고 */}
         <View style={s.logoWrap}>
           <SweatOutLogo width={160} height={94} />
-          <Text style={s.logoSub}>S.WEATHER LAND</Text>
         </View>
 
         {/* 입력 카드 */}

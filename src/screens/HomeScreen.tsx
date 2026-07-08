@@ -8,6 +8,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useGame } from '../store/GameContext';
 import { COLORS, FONTS, MOODS, SHADOW } from '../constants';
+import SweatOutLogo from '../components/SweatOutLogo';
 import {
   getTodayNotifications, getUnreadCount, markAllRead, AppNotification,
 } from '../lib/notifications';
@@ -68,7 +69,7 @@ export default function HomeScreen() {
         >
           {/* ── 헤더 ────────────────────────────── */}
           <View style={styles.header}>
-            <Text style={styles.logo}>S.WEATHER LAND</Text>
+            <SweatOutLogo width={90} height={53} />
             <TouchableOpacity style={styles.bellBtn} onPress={openNotifModal} activeOpacity={0.8}>
               <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
               {unreadCount > 0 && <View style={styles.bellBadge} />}
@@ -220,7 +221,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     paddingBottom: 10,
   },
-  logo: { fontSize: 19, fontWeight: '800', color: COLORS.navy, letterSpacing: 1.5 },
   bellBtn: {
     width: 36, height: 36, borderRadius: 9999,
     backgroundColor: COLORS.card,
