@@ -69,6 +69,10 @@ export default function ReportScreen() {
     [daily, cutoff],
   );
 
+  // 감정 분리: 일반 vs 미션 완수 후
+  const dailyMoods       = filteredMoods.filter((m: any) => !m.log_type || m.log_type === 'daily');
+  const postMissionMoods = filteredMoods.filter((m: any) => m.log_type === 'post_mission');
+
   // 통계
   const totalMissions  = filteredMissions.length;
   const customMissions = filteredMissions.filter(m => m.mission_type === 'custom').length;
@@ -87,10 +91,6 @@ export default function ReportScreen() {
   const topMissions = Object.values(missionCount)
     .sort((a: any, b: any) => b.count - a.count)
     .slice(0, 3) as { label: string; count: number }[];
-
-  // 감정 분리: 일반 vs 미션 완수 후
-  const dailyMoods       = filteredMoods.filter((m: any) => !m.log_type || m.log_type === 'daily');
-  const postMissionMoods = filteredMoods.filter((m: any) => m.log_type === 'post_mission');
 
   // 일반 감정 분포 (Top 5)
   const moodCount = dailyMoods.reduce((acc: Record<string, number>, m: any) => {
