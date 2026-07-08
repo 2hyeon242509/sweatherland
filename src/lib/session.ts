@@ -7,7 +7,7 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const SESSION_KEYS: string[] = []; // @active_user를 localStorage에 유지 → 새로고침/재방문 후에도 로그인 유지
+const SESSION_KEYS: string[] = ['@active_user']; // sessionStorage → 새 탭·새 브라우저 세션에서는 반드시 로그인
 
 function isSessionKey(key: string) {
   return Platform.OS === 'web' && SESSION_KEYS.includes(key);
