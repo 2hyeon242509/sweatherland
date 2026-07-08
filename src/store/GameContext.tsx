@@ -124,9 +124,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       AsyncStorage.getItem('@user_unique_id'),
       AsyncStorage.getItem('@user_status_msg'),
       AsyncStorage.getItem('@user_profile_emoji'),
-      AsyncStorage.getItem('@friend_list'),
     ]).then(([friendsVal, sweatVal, nameVal, energyDateVal, e100Val,
-              missionDatesVal, uniqueIdVal, statusMsgVal, profileEmojiVal, friendListVal]) => {
+              missionDatesVal, uniqueIdVal, statusMsgVal, profileEmojiVal]) => {
       const today = kstToday();
       const isNewDay = energyDateVal !== today;
 
@@ -147,7 +146,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
         uniqueId:     resolvedUniqueId,
         ...(statusMsgVal    ? { statusMsg:    statusMsgVal } : {}),
         ...(profileEmojiVal ? { profileEmoji: profileEmojiVal } : {}),
-        ...(friendListVal   ? { friendList:   JSON.parse(friendListVal) as FriendEntry[] } : {}),
       }));
 
       if (isNewDay) {
@@ -170,12 +168,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
       statusMsg:       data.statusMsg || prev.statusMsg,
       uniqueId:        data.friendCode ? '#' + data.friendCode : prev.uniqueId,
     }));
-    // 해당 유저의 오늘 완료 미션 복원 (새로고침 후 초기화 방지)
-    AsyncStorage.getItem(`@completed_missions_${data.username}`)
-      .then(raw => {
-        if (raw) setState(prev => ({ ...prev, completedMissions: JSON.parse(raw) as string[] }));
-      })
-      .catch(() => {});
+    // 해당 유저의 오늘 완료 미션 + 친구 목록 복원 (새로고침 후 초기화 방지)
+    Promise.all([
+      AsyncStorage.getItem(`@completed_missions_${data.username}`),
+      AsyncStorage.getItem(`@friend_list_${data.username}`).then(val =>
+        val ?? AsyncStorage.getItem('@friend_list') // migrate from old unscoped key
+      ),
+    ]).then(([missionsRaw, friendsRaw]) => {
+      setState(prev => ({
+        ...prev,
+        ...(missionsRaw ? { completedMissions: JSON.parse(missionsRaw) as string[] } : {}),
+        ...(friendsRaw  ? { friendList:        JSON.parse(friendsRaw)  as FriendEntry[] } : {}),
+      }));
+      // 구버전 키에서 마이그레이션된 경우 새 키로 저장
+      if (friendsRaw) {
+        AsyncStorage.getItem(`@friend_list_${data.username}`).then(scoped => {
+          if (!scoped) AsyncStorage.setItem(`@friend_list_${data.username}`, friendsRaw).catch(() => {});
+        }).catch(() => {});
+      }
+    }).catch(() => {});
     // daily_records에서 실제 연속 완료일(streak) 계산
     import('../lib/supabase').then(({ fetchDailyRecords }) => {
       fetchDailyRecords(data.username)
@@ -290,18 +301,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const addFriend = (friend: FriendEntry) => {
+    const username = currentUsernameRef.current;
     setState(prev => {
       if (prev.friendList.some(f => f.uniqueId === friend.uniqueId)) return prev;
       const newList = [...prev.friendList, friend];
-      AsyncStorage.setItem('@friend_list', JSON.stringify(newList)).catch(() => {});
+      const key = username ? `@friend_list_${username}` : '@friend_list';
+      AsyncStorage.setItem(key, JSON.stringify(newList)).catch(() => {});
       return { ...prev, friendList: newList };
     });
   };
 
   const removeFriend = (uniqueId: string) => {
+    const username = currentUsernameRef.current;
     setState(prev => {
       const newList = prev.friendList.filter(f => f.uniqueId !== uniqueId);
-      AsyncStorage.setItem('@friend_list', JSON.stringify(newList)).catch(() => {});
+      const key = username ? `@friend_list_${username}` : '@friend_list';
+      AsyncStorage.setItem(key, JSON.stringify(newList)).catch(() => {});
       return { ...prev, friendList: newList };
     });
   };
