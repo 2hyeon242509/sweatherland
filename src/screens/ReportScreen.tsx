@@ -101,13 +101,9 @@ export default function ReportScreen() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // 미션 완수 후 감정 분포 (Top 5)
-  const postMoodCount = postMissionMoods.reduce((acc: Record<string, number>, m: any) => {
-    acc[m.mood_label] = (acc[m.mood_label] ?? 0) + 1;
-    return acc;
-  }, {});
-  const topPostMoods = Object.entries(postMoodCount)
-    .sort((a, b) => b[1] - a[1])
+  // 미션 완수 후 소감 (최근 5개)
+  const recentPostMemos = postMissionMoods
+    .filter((m: any) => m.memo && m.memo.trim())
     .slice(0, 5);
 
   // 활동한 날 수 (중복 날짜 제거)
@@ -222,29 +218,20 @@ export default function ReportScreen() {
                 })}
           </View>
 
-          {/* 미션 완수 후 감정 분포 */}
-          {postMissionMoods.length > 0 && (
+          {/* 미션 완수 후 소감 */}
+          {recentPostMemos.length > 0 && (
             <View style={s.card}>
-              <Text style={s.cardTitle}>🏅 미션 완수 직후 감정</Text>
+              <Text style={s.cardTitle}>🏅 미션 완수 후 소감</Text>
               <Text style={[s.emptyInCard, { textAlign: 'left', paddingVertical: 0, fontSize: 12, color: COLORS.textMuted }]}>
-                총 {postMissionMoods.length}회 기록
+                총 {postMissionMoods.length}회 기록 (최근 5개)
               </Text>
-              {topPostMoods.map(([label, count], i) => {
-                const mood = MOODS.find(m => m.label === label);
-                return (
-                  <View key={i} style={s.moodRow}>
-                    <Text style={s.moodEmoji}>{mood?.emoji ?? '🏅'}</Text>
-                    <Text style={s.moodLabel}>{label}</Text>
-                    <View style={s.moodBarWrap}>
-                      <View style={[s.moodBarFill, {
-                        width: `${topPostMoods[0][1] > 0 ? Math.round((count / topPostMoods[0][1]) * 100) : 0}%` as `${number}%`,
-                        backgroundColor: mood?.iconColor ?? COLORS.navy,
-                      }]} />
-                    </View>
-                    <Text style={s.moodCount}>{count}회</Text>
-                  </View>
-                );
-              })}
+              {recentPostMemos.map((m: any, i: number) => (
+                <View key={i} style={s.memoRow}>
+                  <Text style={s.memoIdx}>{i + 1}</Text>
+                  <Text style={s.memoText}>{m.memo}</Text>
+                  <Text style={s.memoDate}>{(m.logged_at ?? '').slice(5, 10)}</Text>
+                </View>
+              ))}
             </View>
           )}
 
@@ -352,6 +339,15 @@ const s = StyleSheet.create({
   moodCount: { fontSize: 12, color: COLORS.textMuted, width: 28, textAlign: 'right' },
 
   emptyInCard: { fontSize: 13, color: COLORS.textMuted, textAlign: 'center', paddingVertical: 12 },
+
+  memoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  memoIdx: {
+    width: 22, height: 22, borderRadius: 11, textAlign: 'center', lineHeight: 22,
+    backgroundColor: COLORS.navy, color: '#FFF', fontSize: 11, fontWeight: '700',
+    overflow: 'hidden',
+  },
+  memoText: { flex: 1, fontSize: 13, color: COLORS.text, lineHeight: 20 },
+  memoDate: { fontSize: 11, color: COLORS.textMuted },
 
   encourageCard: {
     backgroundColor: COLORS.navyLight, borderRadius: 18, padding: 20,

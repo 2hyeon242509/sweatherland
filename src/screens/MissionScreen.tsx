@@ -9,7 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useGame } from '../store/GameContext';
-import { COLORS, SHADOW, Mission, StatKey, getDailyServerMissions, MISSION_POOL, MOODS, MoodId } from '../constants';
+import { COLORS, SHADOW, Mission, StatKey, getDailyServerMissions, MISSION_POOL } from '../constants';
 
 /** 날짜 시드 기반으로 풀에서 count개 뽑기 */
 function pickDailyMissions(dateStr: string, pool: Mission[], count = 5): Mission[] {
@@ -155,8 +155,8 @@ export default function MissionScreen() {
   const [confirmTarget,      setConfirmTarget]      = useState<ConfirmTarget | null>(null);
   const [showCelebrate,      setShowCelebrate]      = useState(false);
   const [showEnergy,         setShowEnergy]         = useState(false);
-  const [showMissionMood,    setShowMissionMood]    = useState(false);
-  const [missionMoodSelected, setMissionMoodSelected] = useState<MoodId | null>(null);
+  const [showMissionMood,  setShowMissionMood]  = useState(false);
+  const [missionMoodText,  setMissionMoodText]  = useState('');
 
   // ── 파티클 ──────────────────────────────────────────────────────────────────
   const particles = useMemo<ParticleData[]>(() =>
@@ -281,29 +281,27 @@ export default function MissionScreen() {
     const newDone = completedMissions.length + 1;
     if (newDone >= TOTAL_MISSIONS) {
       recordAllMissionsToday();
-      setMissionMoodSelected(null);
-      setShowMissionMood(true); // 축하 화면 전에 감정 체크
+      setMissionMoodText('');
+      setShowMissionMood(true);
     }
   };
 
-  // ── 미션 완수 후 감정 저장 ────────────────────────────────────────────────────
-  const handleMissionMoodSave = (moodId: MoodId | null) => {
-    if (moodId && currentUsername) {
-      const moodInfo = MOODS.find(m => m.id === moodId);
-      if (moodInfo) {
-        import('../lib/supabase').then(({ saveMoodLog, isSupabaseConfigured }) => {
-          if (isSupabaseConfigured()) {
-            saveMoodLog({
-              user_name:  currentUsername,
-              mood_id:    moodId,
-              mood_label: moodInfo.label,
-              memo:       '',
-              logged_at:  new Date(Date.now() + 9 * 3600 * 1000).toISOString(),
-              log_type:   'post_mission',
-            }).catch(() => {});
-          }
-        });
-      }
+  // ── 미션 완수 후 소감 저장 ────────────────────────────────────────────────────
+  const handleMissionMoodSave = () => {
+    const text = missionMoodText.trim();
+    if (text && currentUsername) {
+      import('../lib/supabase').then(({ saveMoodLog, isSupabaseConfigured }) => {
+        if (isSupabaseConfigured()) {
+          saveMoodLog({
+            user_name:  currentUsername,
+            mood_id:    'post_mission_text',
+            mood_label: '활동 후 소감',
+            memo:       text,
+            logged_at:  new Date(Date.now() + 9 * 3600 * 1000).toISOString(),
+            log_type:   'post_mission',
+          }).catch(() => {});
+        }
+      });
     }
     setShowMissionMood(false);
     setShowCelebrate(true);
@@ -550,61 +548,39 @@ export default function MissionScreen() {
         </View>
       )}
 
-      {/* ── 미션 완수 후 감정 체크 ──────────────────── */}
+      {/* ── 미션 완수 후 소감 입력 ──────────────────── */}
       {showMissionMood && (
-        <View style={s.overlay}>
+        <KeyboardAvoidingView
+          style={s.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
           <View style={s.celebCard}>
             <Text style={{ fontSize: 52 }}>🌈</Text>
             <Text style={s.celebTitle}>미션 완수!</Text>
-            <Text style={[s.celebSub, { marginBottom: 16 }]}>
-              {'지금 기분이 어떤가요?\n솔직하게 알려줘요 💙'}
+            <Text style={[s.celebSub, { marginBottom: 8 }]}>
+              {'활동 후 기분이 어떤가요?\n솔직하게 적어봐요 💙'}
             </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+            <TextInput
+              style={[s.textInput, { width: '100%', minHeight: 80, textAlignVertical: 'top' }]}
+              value={missionMoodText}
+              onChangeText={t => setMissionMoodText(t.slice(0, 100))}
+              placeholder="몸을 움직이니까 기분이 괜찮아졌어요."
+              placeholderTextColor={COLORS.border}
+              multiline
+              maxLength={100}
+              autoFocus
+            />
+            <Text style={[s.charCount, { alignSelf: 'flex-end' }]}>{missionMoodText.length} / 100</Text>
+            <TouchableOpacity
+              style={[s.confirmBtn, { width: '100%', marginTop: 4 }, !missionMoodText.trim() && { opacity: 0.4 }]}
+              onPress={() => { if (missionMoodText.trim()) handleMissionMoodSave(); }}
+              disabled={!missionMoodText.trim()}
+              activeOpacity={0.8}
             >
-              {MOODS.map(mood => (
-                <TouchableOpacity
-                  key={mood.id}
-                  onPress={() => setMissionMoodSelected(mood.id)}
-                  activeOpacity={0.7}
-                  style={{
-                    alignItems: 'center', width: 62,
-                    paddingVertical: 10, paddingHorizontal: 6, borderRadius: 14,
-                    backgroundColor: missionMoodSelected === mood.id ? COLORS.navyLight : COLORS.card,
-                    borderWidth: 2,
-                    borderColor: missionMoodSelected === mood.id ? COLORS.navy : COLORS.border,
-                  }}
-                >
-                  <Text style={{ fontSize: 26 }}>{mood.emoji}</Text>
-                  <Text style={{
-                    fontSize: 11, marginTop: 4, textAlign: 'center',
-                    color: missionMoodSelected === mood.id ? COLORS.navy : COLORS.textMuted,
-                    fontWeight: missionMoodSelected === mood.id ? '700' : '400',
-                  }}>{mood.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <View style={[s.modalBtns, { marginTop: 16 }]}>
-              <TouchableOpacity
-                style={s.cancelBtn}
-                onPress={() => handleMissionMoodSave(null)}
-                activeOpacity={0.8}
-              >
-                <Text style={s.cancelBtnText}>건너뛰기</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.confirmBtn, !missionMoodSelected && { opacity: 0.4 }]}
-                onPress={() => missionMoodSelected && handleMissionMoodSave(missionMoodSelected)}
-                disabled={!missionMoodSelected}
-                activeOpacity={0.8}
-              >
-                <Text style={s.confirmBtnText}>기록하기 💙</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={s.confirmBtnText}>기록하기 💙</Text>
+            </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* ── 전체 완료 축하 ──────────────────────────── */}
